@@ -179,7 +179,11 @@ function setupIpc() {
       280,
       Math.min(640, area.height, Math.ceil(requested)),
     );
+    // Windows fixes the min/max bounds while a window is non-resizable.
+    window.setResizable(true);
+    window.setMinimumSize(360, 280);
     window.setSize(416, height);
+    window.setResizable(false);
     window.setPosition(
       Math.max(area.x, Math.min(bounds.x, area.x + area.width - 416)),
       Math.max(area.y, Math.min(bounds.y, area.y + area.height - height)),
