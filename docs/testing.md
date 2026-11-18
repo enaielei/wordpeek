@@ -74,3 +74,7 @@ pairs; visual screenshots alone do not establish accessibility compliance.
 - Runtime dependency audit remains clean; build-tool advisories remain in #2.
 - Source-app tests use separate profiles/hotkeys and intercept external searches.
   The user's installed running instance is not stopped or reconfigured.
+
+`npm run test:zoom` uses authored fixture content to check the full card at 100%
+and 200% zoom in an isolated native window. Footer controls wrap when the
+effective width is narrow; normal-density layout keeps one compact row.
