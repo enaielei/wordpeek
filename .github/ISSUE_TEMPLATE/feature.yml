@@ -1,0 +1,22 @@
+name: Feature proposal
+description: Propose a focused improvement
+title: 'feat: '
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+      description: Explain the reading or learning problem, rather than only the implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: criteria
+    attributes:
+      label: Proposed behavior and acceptance criteria
+    validations:
+      required: true
+  - type: textarea
+    id: implications
+    attributes:
+      label: Compatibility, privacy, data licensing, and alternatives

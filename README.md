@@ -1,6 +1,80 @@
 # WordPeek
 
-A little clarity, right where you read.
+**A little clarity, right where you read.**
 
-An online-first desktop dictionary for English learners. Initial implementation and branding are being prepared through a pull request.
+An online-first desktop dictionary for people learning English. Select a word,
+press a shortcut, and see a compact HTML/CSS card: one meaning, pronunciation,
+an example, and relevant synonyms and antonyms. Move through meanings with **‹ / ›**.
+Open Google in your default browser when you want more.
 
+**Status: early Windows prototype, not a stable release.** No browser extension.
+Selection capture depends on the host app's Windows accessibility support. Unsupported
+apps can use manual entry or the explicit **Look Up Clipboard** tray command.
+Automatic selection popups and native context-menu integration are planned, not implemented.
+
+## Run locally
+
+Requires Windows 10/11, Node.js 24 LTS, npm, and an internet connection. No Rust/C++
+toolchain or API key is required. PowerShell must be allowed to run the bundled
+selection script; WordPeek does not change execution policy.
+
+```sh
+npm ci
+npm run dev
+```
+
+Select a short English word in another application and press **Ctrl+Alt+W**.
+Change the shortcut through the gear button. WordPeek runs in the system tray;
+Escape or loss of focus hides it, and **Quit WordPeek** in the tray exits.
+
+```sh
+npm run check        # format, lint, tests, typecheck, production frontend build
+npm run test:desktop # live desktop smoke test (interactive Windows)
+npm run build
+npm start            # production desktop app
+npm run package:win  # unsigned, per-user Windows installer in release/
+```
+
+`npm run dev:web` previews the interface in a browser for UI development only;
+global shortcuts, native selection, dismissal, and settings persistence require
+the desktop app. macOS/Linux builds are not supported yet.
+
+## What is shown
+
+- One dictionary sense per page, with its part of speech and phonetic text.
+- A pronunciation button when the provider supplies a supported recording.
+- One example, up to three synonyms, and up to three antonyms when available.
+- Meaning navigation only when there is more than one sense.
+- Google search and expandable source/license information.
+
+Missing information is omitted. No fabricated examples or unrelated sense-wide
+synonyms are inserted to fill space. Meanings retain provider order; the app
+does not infer the intended meaning from a surrounding sentence.
+
+## Online sources & privacy
+
+The first provider is [Free Dictionary API](https://dictionaryapi.dev/), which
+returns Wiktionary-derived content. It is a public service without an uptime
+guarantee; failed lookups show actionable errors. See [source policy](docs/data-sources.md).
+Only an explicitly looked-up word/phrase goes to the provider. Audio is requested
+only on playback. Google receives the word when you press Search Google.
+
+There is no lookup history, telemetry, account, offline dictionary, or background
+clipboard monitoring. Preferences are saved locally in Electron's user-data directory.
+Clipboard fallback is off by default and requires explicit opt-in.
+
+## Brand
+
+![WordPeek brand foundations](assets/brand/brand-board.png)
+
+Read the [brand guidelines](docs/brand-guidelines.md) before changing visible UI or assets.
+
+## Contribute
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md), [AGENTS.md](AGENTS.md), and the
+[architecture](docs/architecture.md). Styling must follow the
+[brand guidelines](docs/brand-guidelines.md); a [visual brand board](docs/brand/index.html)
+and reusable SVG assets live in this repository.
+
+Application code and original brand assets: MIT. Dictionary text, audio, and
+dependencies retain their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
