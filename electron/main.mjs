@@ -170,6 +170,21 @@ function setupIpc() {
     if (!safe) throw new Error('Unsupported source URL');
     return shell.openExternal(safe);
   });
+  handle('window:resize', (requested) => {
+    if (typeof requested !== 'number' || !Number.isFinite(requested))
+      throw new Error('Invalid height');
+    const bounds = window.getBounds();
+    const area = screen.getDisplayMatching(bounds).workArea;
+    const height = Math.max(
+      280,
+      Math.min(640, area.height, Math.ceil(requested)),
+    );
+    window.setSize(416, height);
+    window.setPosition(
+      Math.max(area.x, Math.min(bounds.x, area.x + area.width - 416)),
+      Math.max(area.y, Math.min(bounds.y, area.y + area.height - height)),
+    );
+  });
   handle('window:hide', () => window.hide());
   handle('selection:context', () => latest);
   handle('settings:get', () => settings);
@@ -269,9 +284,9 @@ else {
       session.defaultSession.setPermissionCheckHandler(() => false);
       window = new BrowserWindow({
         width: 416,
-        height: 530,
+        height: 420,
         minWidth: 360,
-        minHeight: 440,
+        minHeight: 280,
         show: false,
         frame: false,
         resizable: false,

@@ -43,6 +43,7 @@ export const bridge: DesktopBridge = window.wordpeek ?? {
   source: async (url) => {
     window.open(url, '_blank', 'noopener,noreferrer');
   },
+  resize: async () => undefined,
   hide: async () => undefined,
   context: async () => ({ word: '', message: '', revision: 0 }),
   settings: async () => ({

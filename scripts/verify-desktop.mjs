@@ -36,6 +36,21 @@ try {
   await expect(
     page.getByRole('button', { name: 'Previous meaning' }),
   ).toBeEnabled();
+  await expect
+    .poll(() =>
+      application.evaluate(
+        ({ BrowserWindow }) =>
+          BrowserWindow.getAllWindows()[0].getBounds().height,
+      ),
+    )
+    .toBeLessThan(400);
+  const nativeBounds = await application.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()[0].getBounds(),
+  );
+  await page.setViewportSize({
+    width: nativeBounds.width,
+    height: nativeBounds.height,
+  });
   await page.screenshot({ path: path.join(output, 'wordpeek-live-light.png') });
   liveResult =
     'live bright lookup, meaning navigation, and attribution disclosure passed';

@@ -35,8 +35,9 @@ button svg {
 }
 .popover {
   width: 100%;
-  min-height: 530px;
-  height: 100dvh;
+  min-height: 280px;
+  height: auto;
+  max-height: 640px;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -286,6 +287,7 @@ blockquote::after {
   vertical-align: middle;
 }
 .empty-state {
+  min-height: 210px;
   margin: auto 0;
   padding: 16px 0;
   text-align: center;

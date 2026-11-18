@@ -4,6 +4,7 @@ contextBridge.exposeInMainWorld('wordpeek', {
   lookup: (word) => ipcRenderer.invoke('dictionary:lookup', word),
   google: (word) => ipcRenderer.invoke('browser:google', word),
   source: (url) => ipcRenderer.invoke('browser:source', url),
+  resize: (height) => ipcRenderer.invoke('window:resize', height),
   hide: () => ipcRenderer.invoke('window:hide'),
   context: () => ipcRenderer.invoke('selection:context'),
   settings: () => ipcRenderer.invoke('settings:get'),

@@ -56,6 +56,22 @@ export function App() {
   const mounted = useRef(true);
   const audio = useRef<HTMLAudioElement | null>(null);
   const sense = senses[page];
+  const popover = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      const height = popover.current?.scrollHeight;
+      if (height) void bridge.resize(height).catch(() => undefined);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [
+    sense,
+    loading,
+    message,
+    settingsOpen,
+    sourceOpen,
+    actionMessage,
+    settingsMessage,
+  ]);
 
   const lookup = useCallback(async (value: string) => {
     const word = value.trim().replace(/\s+/gu, ' ');
@@ -210,7 +226,7 @@ export function App() {
   }
 
   return (
-    <main className="popover" aria-label="WordPeek dictionary">
+    <main ref={popover} className="popover" aria-label="WordPeek dictionary">
       <header className="app-header">
         <div className="brand">
           <Mark />

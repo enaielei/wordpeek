@@ -56,6 +56,7 @@ export interface DesktopBridge {
   lookup(word: string): Promise<LookupResult>;
   google(word: string): Promise<void>;
   source(url: string): Promise<void>;
+  resize(height: number): Promise<void>;
   hide(): Promise<void>;
   context(): Promise<SelectionContext>;
   settings(): Promise<Settings>;

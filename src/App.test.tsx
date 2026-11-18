@@ -16,6 +16,7 @@ vi.mock('./bridge', () => ({
       shortcut: 'Control+Alt+W',
       clipboardFallback: false,
     }),
+    resize: async () => undefined,
     onSelection: () => () => undefined,
     saveSettings: async () => ({ ok: true }),
   },

@@ -72,7 +72,8 @@ indicator of a control or state. Never use color alone to convey meaning.
 
 ## Layout and content budget
 
-Default window: 416 × 530 CSS px (device-independent desktop coordinates).
+Window width: 416 CSS px. Height fits the content, from 280 to 640 px
+(device-independent desktop coordinates), with scrolling for long entries.
 It is a utility window, not a dashboard. Spacing uses a 4 px base scale:
 4, 8, 12, 16, 20, 24, 32. Content inset: 24 px. Control corners: 8 px.
 Card radius for web/marketing previews: 16 px. The first Windows prototype uses

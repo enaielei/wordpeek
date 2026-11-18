@@ -55,7 +55,8 @@ served through wordpeek://app. The development URL is a fixed loopback origin.
 IPC validates sender/frame and operation arguments. External navigation only accepts
 constructed Google queries or approved HTTPS source/license hosts.
 
-Window position is clamped to the cursor's monitor work area. Escape/blur hides
+The renderer requests a content height; main clamps it to 280–640 px and the
+monitor work area. Short entries avoid a tall empty card. Window position is clamped to the cursor's monitor work area. Escape/blur hides
 the card; tray Quit exits. Showing the card focuses it for keyboard access after
 selection capture; dismissing does not restore the previous application's focus
 explicitly in this prototype. Multi-monitor DPI and host-app compatibility need
