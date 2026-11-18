@@ -1,0 +1,41 @@
+/* Canonical WordPeek tokens. See docs/brand-guidelines.md before changing. */
+:root {
+  color-scheme: light;
+  --wp-paper: #f7f6f2;
+  --wp-surface: #ffffff;
+  --wp-ink: #202e2b;
+  --wp-muted: #626d68;
+  --wp-accent: #166b60;
+  --wp-accent-soft: #e4efea;
+  --wp-line: #dcded6;
+  --wp-danger: #9c3931;
+  --wp-focus: #166b60;
+  --wp-font-ui: 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+  --wp-font-word:
+    'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+  --wp-space-1: 4px;
+  --wp-space-2: 8px;
+  --wp-space-3: 12px;
+  --wp-space-4: 16px;
+  --wp-space-5: 20px;
+  --wp-space-6: 24px;
+  --wp-radius-control: 8px;
+  --wp-radius-card: 16px;
+  --wp-shadow: 0 12px 36px rgb(32 46 43 / 12%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --wp-paper: #172320;
+    --wp-surface: #202f2a;
+    --wp-ink: #edf1e9;
+    --wp-muted: #adb9b0;
+    --wp-accent: #91d2bf;
+    --wp-accent-soft: #273e35;
+    --wp-line: #42534a;
+    --wp-danger: #ffb4a8;
+    --wp-focus: #91d2bf;
+    --wp-shadow: 0 12px 36px rgb(0 0 0 / 22%);
+  }
+}
