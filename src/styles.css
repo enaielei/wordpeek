@@ -6,12 +6,13 @@ body {
   background: var(--wp-paper);
   color: var(--wp-ink);
   font-family: var(--wp-font-ui);
-  font-size: 14px;
-  line-height: 1.55;
+  font-size: 12px;
+  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
 }
 button,
-input {
+input,
+select {
   font: inherit;
 }
 button {
@@ -26,7 +27,8 @@ button:disabled {
   opacity: 0.35;
 }
 button:focus-visible,
-input:focus-visible {
+input:focus-visible,
+select:focus-visible {
   outline: 2px solid var(--wp-focus);
   outline-offset: 3px;
 }
@@ -35,9 +37,9 @@ button svg {
 }
 .popover {
   width: 100%;
-  min-height: 280px;
+  min-height: 180px;
   height: auto;
-  max-height: 640px;
+  max-height: 600px;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -48,7 +50,7 @@ button svg {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: 4px 8px;
   border-bottom: 1px solid var(--wp-line);
 }
 .brand {
@@ -57,11 +59,11 @@ button svg {
   gap: 7px;
   font-weight: 650;
   letter-spacing: -0.5px;
-  font-size: 16px;
+  font-size: 12px;
 }
 .brand-mark {
-  width: 28px;
-  height: 28px;
+  width: 20px;
+  height: 20px;
   color: var(--wp-accent);
   flex-shrink: 0;
 }
@@ -78,14 +80,14 @@ button svg {
   border: none;
   background: transparent;
   border-radius: var(--wp-radius-control);
-  width: 32px;
-  height: 32px;
-  padding: 7px;
+  width: 24px;
+  height: 24px;
+  padding: 5px;
   flex-shrink: 0;
 }
 .icon-button svg {
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
   stroke-width: 1.75;
 }
 .icon-button:hover:not(:disabled),
@@ -102,8 +104,8 @@ button svg {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 10px;
-  margin: 16px 20px 0;
+  padding: 4px 6px;
+  margin: 6px 8px 0;
   background: var(--wp-surface);
   border: 1px solid var(--wp-line);
   border-radius: var(--wp-radius-control);
@@ -139,7 +141,7 @@ input::placeholder {
   filter: brightness(0.96);
 }
 .content {
-  padding: 24px;
+  padding: 10px;
 }
 .dictionary-content {
   flex: 1;
@@ -150,14 +152,14 @@ input::placeholder {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 h1 {
   font-family: var(--wp-font-word);
-  font-size: 34px;
+  font-size: 20px;
   line-height: 1.15;
-  letter-spacing: -1px;
-  font-weight: 500;
+  letter-spacing: -0.6px;
+  font-weight: 600;
   margin: 0;
   overflow-wrap: anywhere;
   text-wrap: balance;
@@ -169,10 +171,10 @@ h1 {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 9px;
+  gap: 7px;
   color: var(--wp-muted);
   font-size: 13px;
-  margin: 9px 0 0;
+  margin: 5px 0 0;
 }
 .word-meta > span:first-child {
   font-style: italic;
@@ -181,18 +183,18 @@ h1 {
   color: var(--wp-accent);
 }
 .definition {
-  font-size: 17px;
-  line-height: 1.6;
-  margin: 25px 0 18px;
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 10px 0 8px;
   overflow-wrap: anywhere;
 }
 blockquote {
-  margin: 0 0 22px;
-  padding: 1px 0 1px 14px;
+  margin: 0 0 8px;
+  padding: 1px 0 1px 10px;
   border-left: 2px solid var(--wp-accent);
   color: var(--wp-muted);
-  font-size: 14px;
-  line-height: 1.65;
+  font-size: 12px;
+  line-height: 1.45;
   overflow-wrap: anywhere;
 }
 blockquote::before {
@@ -204,13 +206,13 @@ blockquote::after {
 .relations {
   margin: 0;
   display: grid;
-  gap: 8px;
-  font-size: 13px;
+  gap: 4px;
+  font-size: 11px;
 }
 .relations > div {
   display: grid;
-  grid-template-columns: 62px 1fr;
-  gap: 12px;
+  grid-template-columns: 50px 1fr;
+  gap: 8px;
 }
 .relations dt {
   color: var(--wp-muted);
@@ -231,8 +233,8 @@ blockquote::after {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  min-height: 58px;
-  padding: 10px 18px;
+  min-height: 34px;
+  padding: 4px 8px;
   margin-top: auto;
   border-top: 1px solid var(--wp-line);
   gap: 8px;
@@ -287,7 +289,7 @@ blockquote::after {
   vertical-align: middle;
 }
 .empty-state {
-  min-height: 210px;
+  min-height: 110px;
   margin: auto 0;
   padding: 16px 0;
   text-align: center;
@@ -300,8 +302,8 @@ blockquote::after {
   background: var(--wp-accent-soft);
 }
 .empty-mark .brand-mark {
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
 }
 .eyebrow {
   font-size: 10px;
@@ -311,7 +313,7 @@ blockquote::after {
   margin: 0 0 10px;
 }
 .empty-state h1 {
-  font-size: 28px;
+  font-size: 17px;
 }
 .empty-state > p:not(.eyebrow) {
   color: var(--wp-muted);
@@ -344,8 +346,8 @@ blockquote::after {
   animation: breathe 1s ease-in-out infinite alternate;
 }
 .settings h1 {
-  font-size: 28px;
-  margin-bottom: 24px;
+  font-size: 17px;
+  margin-bottom: 12px;
 }
 .settings > label:not(.checkbox-label) {
   display: block;
@@ -353,26 +355,27 @@ blockquote::after {
   font-weight: 600;
   margin-bottom: 8px;
 }
-.settings > input {
+.settings > input,
+.settings > select {
   width: 100%;
   background: var(--wp-surface);
   color: var(--wp-ink);
   border: 1px solid var(--wp-line);
   border-radius: var(--wp-radius-control);
-  padding: 10px;
-  font-size: 13px;
+  padding: 6px 8px;
+  font-size: 12px;
 }
 .hint,
 .privacy-note {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--wp-muted);
-  margin: 8px 0 20px;
+  margin: 4px 0 10px;
 }
 .checkbox-label {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  font-size: 13px;
+  gap: 4px;
+  font-size: 11px;
 }
 .checkbox-label input {
   margin-top: 4px;
@@ -383,7 +386,7 @@ blockquote::after {
   color: var(--wp-paper);
   border: 0;
   border-radius: var(--wp-radius-control);
-  padding: 9px 12px;
+  padding: 6px 10px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -427,4 +430,165 @@ blockquote::after {
   .primary-button {
     border: 1px solid ButtonText;
   }
+}
+
+.settings > select {
+  margin-bottom: 6px;
+}
+.settings label {
+  scroll-margin-top: 12px;
+}
+.settings-status {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--wp-muted);
+}
+.settings-status:empty {
+  display: none;
+}
+.url-preview {
+  margin: 8px 0 14px;
+  font-size: 11px;
+  color: var(--wp-muted);
+}
+.url-preview span,
+.url-preview code {
+  display: block;
+}
+.url-preview code {
+  overflow-wrap: anywhere;
+  margin-top: 4px;
+  color: var(--wp-ink);
+}
+
+.word-meta {
+  font-size: 11px;
+  gap: 6px;
+  margin-top: 4px;
+}
+.settings > label:not(.checkbox-label) {
+  font-size: 11px;
+  margin-bottom: 5px;
+}
+.settings h1 {
+  font-size: 17px;
+}
+.empty-state {
+  padding: 8px 0;
+}
+.empty-state > p:not(.eyebrow) {
+  font-size: 12px;
+  margin-top: 8px;
+}
+.lookup-submit {
+  min-height: 24px;
+  padding: 3px 6px;
+}
+
+.compact-select-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-height: 29px;
+  padding: 5px 7px;
+  background: var(--wp-surface);
+  color: var(--wp-ink);
+  border: 1px solid var(--wp-line);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+.compact-select-trigger:focus-visible {
+  outline: 2px solid var(--wp-focus);
+  outline-offset: 2px;
+}
+.compact-select-content {
+  z-index: 20;
+  width: var(--radix-select-trigger-width);
+  max-height: min(220px, var(--radix-select-content-available-height));
+  overflow: auto;
+  padding: 3px;
+  background: var(--wp-surface);
+  color: var(--wp-ink);
+  border: 1px solid var(--wp-line);
+  border-radius: 6px;
+  font-family: var(--wp-font-ui);
+  font-size: 12px;
+  box-shadow: var(--wp-shadow);
+}
+.compact-select-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 5px 6px;
+  min-height: 25px;
+  border-radius: 3px;
+  cursor: default;
+}
+.compact-select-item[data-highlighted] {
+  background: var(--wp-accent-soft);
+  outline: 1px solid var(--wp-focus);
+  outline-offset: -1px;
+}
+.compact-select-item[data-state='checked'] {
+  font-weight: 600;
+}
+.compact-tooltip {
+  z-index: 30;
+  max-width: 230px;
+  padding: 4px 6px;
+  border: 1px solid var(--wp-line);
+  border-radius: 4px;
+  background: var(--wp-surface);
+  color: var(--wp-ink);
+  font-family: var(--wp-font-ui);
+  font-size: 11px;
+  box-shadow: var(--wp-shadow);
+}
+.shortcut-preview {
+  margin: 5px 0 10px;
+}
+.shortcut-keys,
+.shortcut-key-part {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.shortcut-keys {
+  flex-wrap: wrap;
+}
+.shortcut-keys kbd {
+  display: inline-block;
+  min-width: 20px;
+  padding: 1px 4px;
+  font: 500 10px/15px var(--wp-font-ui);
+  text-align: center;
+  border: 1px solid var(--wp-line);
+  border-radius: 3px;
+  color: var(--wp-ink);
+  background: var(--wp-accent-soft);
+}
+.shortcut-plus {
+  color: var(--wp-muted);
+  font-size: 10px;
+}
+
+.brand {
+  min-width: 0;
+}
+.brand > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lookup-submit,
+.text-button:hover,
+.source-button:hover {
+  color: var(--wp-ink);
 }

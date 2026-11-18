@@ -12,7 +12,7 @@ flowchart LR
   C --> F[Restricted preload bridge]
   F --> G[HTML and CSS word card]
   G --> F
-  C --> H[Default browser: Google or source]
+  C --> H[Default browser: configured search or source]
 ```
 
 ## Ownership
@@ -26,11 +26,19 @@ flowchart LR
 - electron/preload.cjs: narrowly typed operations and one selection event.
 - src/dictionary.ts: untrusted response normalization into independent senses.
 - src/App.tsx: loading/error/content/settings state; provider text rendered as text.
-- src/brand/tokens.css: canonical design tokens; CSS owns presentation.
+- src/brand/tokens.css: canonical design tokens; CSS owns presentation. Bundled font files have no network dependency.
 
 The browser preview has a development-only bridge fallback to the same provider.
 It does not claim desktop capabilities. The desktop performs requests in main,
 not via a generic renderer HTTP or shell API.
+
+Settings validation/migration lives in electron/settings.mjs; shared/search.mjs
+owns search templates and encoding; electron/tray.mjs owns the menu definition.
+Radix primitives supply dropdown/tooltip interaction, while locally bundled
+Manrope and project CSS tokens own the approved compact presentation. Appearance
+is persisted and synchronized with nativeTheme and a renderer data attribute.
+Settings writes are queued and atomic, with main-process change events keeping
+the tray and renderer synchronized. See docs/search-settings.md.
 
 ## Data flow and privacy
 
@@ -49,13 +57,14 @@ avoiding unsupported assumptions about matching senses. Provider order is preser
 
 ## Desktop boundary
 
-Renderer: sandboxed, no Node, context isolation, restricted CSP, no arbitrary
+Renderer: sandboxed, no Node, context isolation, restricted script CSP, inline style attributes for Radix positioning, no arbitrary
 navigation or window creation, permission requests denied. Production assets are
 served through wordpeek://app. The development URL is a fixed loopback origin.
 IPC validates sender/frame and operation arguments. External navigation only accepts
-constructed Google queries or approved HTTPS source/license hosts.
+constructed searches from validated saved presets/custom templates, or approved
+HTTPS source/license hosts. Search IPC accepts a word, never an arbitrary URL.
 
-The renderer requests a content height; main clamps it to 280–640 px and the
+The renderer requests a content height; main clamps it to 180–600 px and the
 monitor work area. Short entries avoid a tall empty card. Window position is clamped to the cursor's monitor work area. Escape/blur hides
 the card; tray Quit exits. Showing the card focuses it for keyboard access after
 selection capture; dismissing does not restore the previous application's focus

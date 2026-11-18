@@ -1,3 +1,5 @@
+import * as Tooltip from '@radix-ui/react-tooltip';
+import { IconButton } from './components/IconButton';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowUpRight,
@@ -8,9 +10,14 @@ import {
   Volume2,
   X,
   ArrowLeft,
-  Check,
 } from 'lucide-react';
 import { bridge } from './bridge';
+import {
+  DEFAULT_SEARCH_SETTINGS,
+  searchLabel,
+  validateSearchSettings,
+} from '../shared/search.mjs';
+import { SettingsPanel } from './SettingsPanel';
 import { allowedUrl, toSenses } from './dictionary';
 import type { SelectionContext, Sense, Settings } from './types';
 
@@ -37,6 +44,7 @@ function Mark() {
 
 export function App() {
   const [query, setQuery] = useState('');
+  const [searchVisible, setSearchVisible] = useState(false);
   const [searched, setSearched] = useState('');
   const [senses, setSenses] = useState<Sense[]>([]);
   const [page, setPage] = useState(0);
@@ -45,9 +53,24 @@ export function App() {
   const [actionMessage, setActionMessage] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settings, setSettings] = useState<Settings>({
+    appearance: 'system',
     shortcut: 'Control+Alt+W',
     clipboardFallback: false,
+    ...DEFAULT_SEARCH_SETTINGS,
   });
+  const [preferences, setPreferences] = useState<Settings>({
+    appearance: 'system',
+    shortcut: 'Control+Alt+W',
+    clipboardFallback: false,
+    ...DEFAULT_SEARCH_SETTINGS,
+  });
+  useEffect(() => {
+    document.documentElement.dataset.appearance = preferences.appearance;
+  }, [preferences.appearance]);
+  const searchAction =
+    preferences.searchEngine === 'custom'
+      ? 'Search custom URL'
+      : `Search ${searchLabel(preferences)}`;
   const [saving, setSaving] = useState(false);
   const [settingsMessage, setSettingsMessage] = useState('');
   const [sourceOpen, setSourceOpen] = useState(false);
@@ -71,6 +94,9 @@ export function App() {
     sourceOpen,
     actionMessage,
     settingsMessage,
+    searchVisible,
+    settings.searchEngine,
+    settings.customSearchUrl,
   ]);
 
   const lookup = useCallback(async (value: string) => {
@@ -78,6 +104,7 @@ export function App() {
     const id = ++request.current;
     setQuery(word);
     setSearched(word);
+    setSearchVisible(false);
     setActionMessage('');
     setSourceOpen(false);
     setSenses([]);
@@ -98,12 +125,12 @@ export function App() {
         setSenses(next);
         if (!next.length)
           setMessage(
-            'This entry has no readable meanings. Try another word or search Google.',
+            'This entry has no readable meanings. Try another word or search the web.',
           );
       }
     } catch {
       if (mounted.current && id === request.current)
-        setMessage('Couldn’t load the word. Try again or search Google.');
+        setMessage('Couldn’t load the word. Try again or search the web.');
     } finally {
       if (mounted.current && id === request.current) setLoading(false);
     }
@@ -129,6 +156,16 @@ export function App() {
       input.current?.focus();
     };
     const unsubscribe = bridge.onSelection(receive);
+    const unsubscribeSettings = bridge.onSettingsChanged((value) => {
+      if (!mounted.current) return;
+      setSettings(value);
+      setPreferences(value);
+    });
+    const unsubscribeOpen = bridge.onOpenSettings((payload) => {
+      if (!mounted.current) return;
+      setSettingsOpen(true);
+      setSettingsMessage(payload.message || '');
+    });
     void bridge
       .context()
       .then(receive)
@@ -139,12 +176,17 @@ export function App() {
     void bridge
       .settings()
       .then((value) => {
-        if (mounted.current) setSettings(value);
+        if (mounted.current) {
+          setSettings(value);
+          setPreferences(value);
+        }
       })
       .catch(() => undefined);
     return () => {
       mounted.current = false;
       unsubscribe();
+      unsubscribeSettings();
+      unsubscribeOpen();
       audio.current?.pause();
     };
   }, [lookup]);
@@ -156,6 +198,11 @@ export function App() {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented ||
+        document.querySelector('[data-wordpeek-select-open]')
+      )
+        return;
       if (event.key === 'Escape') {
         if (settingsOpen) setSettingsOpen(false);
         else if (sourceOpen) setSourceOpen(false);
@@ -182,9 +229,9 @@ export function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, [settingsOpen, sourceOpen, senses.length]);
 
-  async function google() {
+  async function searchWeb() {
     try {
-      await bridge.google(searched || query);
+      await bridge.search(searched || query);
     } catch {
       setActionMessage('Couldn’t open your browser. Try again.');
     }
@@ -205,14 +252,28 @@ export function App() {
       await player.play();
     } catch {
       setActionMessage(
-        'Pronunciation couldn’t play. Try again or search Google.',
+        'Pronunciation couldn’t play. Try again or search the web.',
       );
     }
   }
   async function save() {
+    try {
+      validateSearchSettings(settings);
+    } catch (error) {
+      setSettingsMessage(
+        error instanceof Error ? error.message : 'Check the search settings.',
+      );
+      document.getElementById('custom-search-url')?.focus();
+      return;
+    }
     setSaving(true);
     try {
       const result = await bridge.saveSettings(settings);
+      if (result.ok) {
+        const saved = result.settings ?? settings;
+        setSettings(saved);
+        setPreferences(saved);
+      }
       setSettingsMessage(
         result.ok
           ? 'Settings saved.'
@@ -226,325 +287,305 @@ export function App() {
   }
 
   return (
-    <main ref={popover} className="popover" aria-label="WordPeek dictionary">
-      <header className="app-header">
-        <div className="brand">
-          <Mark />
-          <span translate="no">WordPeek</span>
-        </div>
-        <div className="header-actions">
-          <button
-            className="icon-button"
-            aria-label={settingsOpen ? 'Back to dictionary' : 'Open settings'}
-            title={settingsOpen ? 'Back to dictionary' : 'Settings'}
-            onClick={() => {
-              setSettingsOpen(!settingsOpen);
-              setSettingsMessage('');
-            }}
-          >
-            {settingsOpen ? (
-              <ArrowLeft aria-hidden="true" />
-            ) : (
-              <Settings2 aria-hidden="true" />
-            )}
-          </button>
-          <button
-            className="icon-button"
-            aria-label="Dismiss WordPeek"
-            title="Dismiss (Esc)"
-            onClick={() => void bridge.hide()}
-          >
-            <X aria-hidden="true" />
-          </button>
-        </div>
-      </header>
-      {settingsOpen ? (
-        <section className="settings content">
-          <p className="eyebrow">MAKE IT YOURS</p>
-          <h1>Little preferences.</h1>
-          <label htmlFor="shortcut">Lookup shortcut</label>
-          <input
-            id="shortcut"
-            name="shortcut"
-            value={settings.shortcut}
-            onChange={(event) => {
-              setSettings({ ...settings, shortcut: event.target.value });
-              setSettingsMessage('');
-            }}
-            autoComplete="off"
-            spellCheck={false}
-          />
-          <p className="hint">
-            Use modifiers and a letter, like Control+Alt+W.
-          </p>
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={settings.clipboardFallback}
-              onChange={(event) =>
-                setSettings({
-                  ...settings,
-                  clipboardFallback: event.target.checked,
-                })
-              }
-            />
-            <span>Use clipboard if selection is unavailable</span>
-          </label>
-          <p className="hint">
-            Off by default. When enabled, the shortcut may send a previously
-            copied word to the online dictionary. WordPeek never monitors your
-            clipboard.
-          </p>
-          <button
-            className="primary-button"
-            disabled={saving}
-            onClick={() => void save()}
-          >
-            <Check size={16} aria-hidden="true" />
-            {saving ? 'Saving…' : 'Save Settings'}
-          </button>
-          <p role="status" className="hint">
-            {settingsMessage}
-          </p>
-          <p className="privacy-note">
-            Lookups go to Free Dictionary API. Audio loads when you press play.
-            Google and source links open in your default browser. No accounts,
-            analytics, or saved lookup history.
-          </p>
-        </section>
-      ) : (
-        <>
-          <form
-            className="lookup-form"
-            onSubmit={(event) => {
-              event.preventDefault();
-              void lookup(query);
-            }}
-          >
-            <Search size={16} aria-hidden="true" />
-            <label className="sr-only" htmlFor="word">
-              Word or short phrase
-            </label>
-            <input
-              ref={input}
-              id="word"
-              name="word"
-              placeholder="A word you’re curious about…"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              maxLength={80}
-              autoComplete="off"
-              spellCheck={false}
-            />
-            <button className="lookup-submit" type="submit" disabled={loading}>
-              Look Up
-            </button>
-          </form>
-          <section className="content dictionary-content" aria-busy={loading}>
-            {loading ? (
-              <div className="empty-state" role="status">
-                <span className="loading-dot" />
-                <p>Finding a little clarity…</p>
-              </div>
-            ) : sense ? (
-              <>
-                <div className="word-heading">
-                  <h1>{sense.word}</h1>
-                  <div className="word-actions">
-                    <button
-                      className="icon-button accent-button"
-                      aria-label={
-                        sense.audio
-                          ? `Play pronunciation of ${sense.word}`
-                          : 'Pronunciation unavailable'
-                      }
-                      title={
-                        sense.audio
-                          ? 'Play pronunciation'
-                          : 'No recording available'
-                      }
-                      disabled={!sense.audio}
-                      onClick={() => void speak()}
-                    >
-                      <Volume2 aria-hidden="true" />
-                    </button>
-                    <button
-                      className="icon-button"
-                      aria-label={`Search Google for ${searched}`}
-                      title="Search Google"
-                      onClick={() => void google()}
-                    >
-                      <ArrowUpRight aria-hidden="true" />
-                    </button>
-                  </div>
-                </div>
-                <p className="word-meta">
-                  <span>{sense.partOfSpeech}</span>
-                  {sense.phonetic ? (
-                    <>
-                      <span className="meta-dot" aria-hidden="true">
-                        ·
-                      </span>
-                      <span>{sense.phonetic}</span>
-                    </>
-                  ) : null}
-                </p>
-                <div className="sense-body" key={sense.id}>
-                  <p className="definition">{sense.definition}</p>
-                  {sense.example ? (
-                    <blockquote>{sense.example}</blockquote>
-                  ) : null}
-                  {sense.synonyms.length || sense.antonyms.length ? (
-                    <dl className="relations">
-                      {sense.synonyms.length ? (
-                        <div>
-                          <dt>Similar</dt>
-                          <dd>{sense.synonyms.slice(0, 3).join(', ')}</dd>
-                        </div>
-                      ) : null}
-                      {sense.antonyms.length ? (
-                        <div>
-                          <dt>Opposite</dt>
-                          <dd>{sense.antonyms.slice(0, 3).join(', ')}</dd>
-                        </div>
-                      ) : null}
-                    </dl>
-                  ) : null}
-                </div>
-              </>
-            ) : (
-              <div className="empty-state">
-                <span className="empty-mark">
-                  <Mark />
-                </span>
-                <p className="eyebrow">A LITTLE CLARITY</p>
-                <h1>
-                  {message ? 'Let’s try another way.' : 'Keep your place.'}
-                </h1>
-                <p role="status">
-                  {message ||
-                    `Select a word and press ${settings.shortcut.replaceAll('Control', 'Ctrl')}. Or look one up here.`}
-                </p>
-                {searched ? (
-                  <div className="empty-actions">
-                    <button
-                      className="text-button"
-                      onClick={() => void lookup(searched)}
-                    >
-                      Try Again
-                    </button>
-                    <button
-                      className="text-button"
-                      onClick={() => void google()}
-                    >
-                      Search Google{' '}
-                      <ArrowUpRight size={14} aria-hidden="true" />
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-            )}
-            <p className="action-message" role="status">
-              {actionMessage}
-            </p>
-          </section>
-          <footer className="card-footer">
-            <div className="attribution">
-              {sense ? (
-                <button
-                  className="source-button"
-                  onClick={() => setSourceOpen(!sourceOpen)}
-                  aria-expanded={sourceOpen}
-                >
-                  Source & License
-                </button>
+    <Tooltip.Provider delayDuration={400}>
+      <main ref={popover} className="popover" aria-label="WordPeek dictionary">
+        <header className="app-header">
+          <div className="brand">
+            <Mark />
+            <span translate="no">WordPeek</span>
+          </div>
+          <div className="header-actions">
+            {!settingsOpen && sense ? (
+              <IconButton
+                className="icon-button"
+                aria-label="Look up another word"
+                title="Look up another word"
+                onClick={() => {
+                  setSearchVisible(!searchVisible);
+                  requestAnimationFrame(() => input.current?.focus());
+                }}
+              >
+                <Search aria-hidden="true" />
+              </IconButton>
+            ) : null}
+            <IconButton
+              className="icon-button"
+              aria-label={settingsOpen ? 'Back to dictionary' : 'Open settings'}
+              title={settingsOpen ? 'Back to dictionary' : 'Settings'}
+              onClick={() => {
+                setSettings(preferences);
+                setSettingsOpen(!settingsOpen);
+                setSettingsMessage('');
+              }}
+            >
+              {settingsOpen ? (
+                <ArrowLeft aria-hidden="true" />
               ) : (
-                <span>Online English dictionary</span>
+                <Settings2 aria-hidden="true" />
               )}
-            </div>
-            {senses.length > 1 ? (
-              <nav className="meaning-nav" aria-label="Meanings">
+            </IconButton>
+            <IconButton
+              className="icon-button"
+              aria-label="Dismiss WordPeek"
+              title="Dismiss (Esc)"
+              onClick={() => void bridge.hide()}
+            >
+              <X aria-hidden="true" />
+            </IconButton>
+          </div>
+        </header>
+        {settingsOpen ? (
+          <SettingsPanel
+            settings={settings}
+            onChange={(next) => {
+              setSettings(next);
+              setSettingsMessage('');
+            }}
+            onSave={() => void save()}
+            saving={saving}
+            message={settingsMessage}
+          />
+        ) : (
+          <>
+            {!sense || searchVisible ? (
+              <form
+                className="lookup-form"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void lookup(query);
+                }}
+              >
+                <Search size={16} aria-hidden="true" />
+                <label className="sr-only" htmlFor="word">
+                  Word or short phrase
+                </label>
+                <input
+                  ref={input}
+                  id="word"
+                  name="word"
+                  placeholder="A word you’re curious about…"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  maxLength={80}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
                 <button
-                  className="icon-button"
-                  aria-label="Previous meaning"
-                  title="Previous meaning (←)"
-                  disabled={page === 0}
-                  onClick={() => {
-                    setPage(page - 1);
-                    setSourceOpen(false);
-                  }}
+                  className="lookup-submit"
+                  type="submit"
+                  disabled={loading}
                 >
-                  <ChevronLeft aria-hidden="true" />
+                  Look Up
                 </button>
-                <span aria-live="polite">
-                  {page + 1} <span className="page-divider">/</span>{' '}
-                  {senses.length}
-                </span>
-                <button
-                  className="icon-button"
-                  aria-label="Next meaning"
-                  title="Next meaning (→)"
-                  disabled={page === senses.length - 1}
-                  onClick={() => {
-                    setPage(page + 1);
-                    setSourceOpen(false);
-                  }}
-                >
-                  <ChevronRight aria-hidden="true" />
-                </button>
-              </nav>
-            ) : (
-              <span className="escape-hint">esc to close</span>
-            )}
-          </footer>
-          {sourceOpen && sense ? (
-            <aside className="source-panel" aria-label="Dictionary attribution">
-              <p>
-                Content via Free Dictionary API.{' '}
-                {sense.source ? (
-                  <button onClick={() => void source(sense.source!)}>
-                    View Wiktionary entry{' '}
-                    <ArrowUpRight size={12} aria-hidden="true" />
+              </form>
+            ) : null}
+            <section className="content dictionary-content" aria-busy={loading}>
+              {loading ? (
+                <div className="empty-state" role="status">
+                  <span className="loading-dot" />
+                  <p>Finding a little clarity…</p>
+                </div>
+              ) : sense ? (
+                <>
+                  <div className="word-heading">
+                    <h1>{sense.word}</h1>
+                    <div className="word-actions">
+                      <IconButton
+                        className="icon-button accent-button"
+                        aria-label={
+                          sense.audio
+                            ? `Play pronunciation of ${sense.word}`
+                            : 'Pronunciation unavailable'
+                        }
+                        title={
+                          sense.audio
+                            ? 'Play pronunciation'
+                            : 'No recording available'
+                        }
+                        disabled={!sense.audio}
+                        onClick={() => void speak()}
+                      >
+                        <Volume2 aria-hidden="true" />
+                      </IconButton>
+                      <IconButton
+                        className="icon-button"
+                        aria-label={`${searchAction} for ${searched}`}
+                        title={searchAction}
+                        onClick={() => void searchWeb()}
+                      >
+                        <ArrowUpRight aria-hidden="true" />
+                      </IconButton>
+                    </div>
+                  </div>
+                  <p className="word-meta">
+                    <span>{sense.partOfSpeech}</span>
+                    {sense.phonetic ? (
+                      <>
+                        <span className="meta-dot" aria-hidden="true">
+                          ·
+                        </span>
+                        <span>{sense.phonetic}</span>
+                      </>
+                    ) : null}
+                  </p>
+                  <div className="sense-body" key={sense.id}>
+                    <p className="definition">{sense.definition}</p>
+                    {sense.example ? (
+                      <blockquote>{sense.example}</blockquote>
+                    ) : null}
+                    {sense.synonyms.length || sense.antonyms.length ? (
+                      <dl className="relations">
+                        {sense.synonyms.length ? (
+                          <div>
+                            <dt>Similar</dt>
+                            <dd>{sense.synonyms.slice(0, 3).join(', ')}</dd>
+                          </div>
+                        ) : null}
+                        {sense.antonyms.length ? (
+                          <div>
+                            <dt>Opposite</dt>
+                            <dd>{sense.antonyms.slice(0, 3).join(', ')}</dd>
+                          </div>
+                        ) : null}
+                      </dl>
+                    ) : null}
+                  </div>
+                </>
+              ) : (
+                <div className="empty-state">
+                  <h1>
+                    {message ? 'Let’s try another way.' : 'Keep your place.'}
+                  </h1>
+                  <p role="status">
+                    {message ||
+                      `Select a word and press ${settings.shortcut.replaceAll('Control', 'Ctrl')}. Or look one up here.`}
+                  </p>
+                  {searched ? (
+                    <div className="empty-actions">
+                      <button
+                        className="text-button"
+                        onClick={() => void lookup(searched)}
+                      >
+                        Try Again
+                      </button>
+                      <button
+                        className="text-button"
+                        onClick={() => void searchWeb()}
+                      >
+                        {searchAction}{' '}
+                        <ArrowUpRight size={14} aria-hidden="true" />
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              )}
+              <p className="action-message" role="status">
+                {actionMessage}
+              </p>
+            </section>
+            <footer className="card-footer">
+              <div className="attribution">
+                {sense ? (
+                  <button
+                    className="source-button"
+                    onClick={() => setSourceOpen(!sourceOpen)}
+                    aria-expanded={sourceOpen}
+                  >
+                    Source & License
                   </button>
                 ) : (
-                  'Original entry source unavailable.'
+                  <span>Online English dictionary</span>
                 )}
-              </p>
-              <p>
-                {sense.license?.name ? (
-                  <>
-                    Text:{' '}
-                    {allowedUrl(sense.license.url, ['creativecommons.org']) ? (
-                      <button onClick={() => void source(sense.license!.url)}>
-                        {sense.license.name}
-                      </button>
-                    ) : (
-                      sense.license.name
-                    )}
-                    . Display shortened to one meaning at a time; related lists
-                    limited to 3.
-                  </>
-                ) : (
-                  'Text license was not supplied by the provider.'
-                )}
-              </p>
-              {sense.audio ? (
+              </div>
+              {senses.length > 1 ? (
+                <nav className="meaning-nav" aria-label="Meanings">
+                  <IconButton
+                    className="icon-button"
+                    aria-label="Previous meaning"
+                    title="Previous meaning (←)"
+                    disabled={page === 0}
+                    onClick={() => {
+                      setPage(page - 1);
+                      setSourceOpen(false);
+                    }}
+                  >
+                    <ChevronLeft aria-hidden="true" />
+                  </IconButton>
+                  <span aria-live="polite">
+                    {page + 1} <span className="page-divider">/</span>{' '}
+                    {senses.length}
+                  </span>
+                  <IconButton
+                    className="icon-button"
+                    aria-label="Next meaning"
+                    title="Next meaning (→)"
+                    disabled={page === senses.length - 1}
+                    onClick={() => {
+                      setPage(page + 1);
+                      setSourceOpen(false);
+                    }}
+                  >
+                    <ChevronRight aria-hidden="true" />
+                  </IconButton>
+                </nav>
+              ) : (
+                <span className="escape-hint">esc to close</span>
+              )}
+            </footer>
+            {sourceOpen && sense ? (
+              <aside
+                className="source-panel"
+                aria-label="Dictionary attribution"
+              >
                 <p>
-                  Audio: {sense.audioLicense?.name || 'license not supplied'}.
-                  {sense.audioSource ? (
-                    <>
-                      {' '}
-                      <button onClick={() => void source(sense.audioSource!)}>
-                        Recording source
-                      </button>
-                    </>
-                  ) : null}
+                  Content via Free Dictionary API.{' '}
+                  {sense.source ? (
+                    <button onClick={() => void source(sense.source!)}>
+                      View Wiktionary entry{' '}
+                      <ArrowUpRight size={12} aria-hidden="true" />
+                    </button>
+                  ) : (
+                    'Original entry source unavailable.'
+                  )}
                 </p>
-              ) : null}
-            </aside>
-          ) : null}
-        </>
-      )}
-    </main>
+                <p>
+                  {sense.license?.name ? (
+                    <>
+                      Text:{' '}
+                      {allowedUrl(sense.license.url, [
+                        'creativecommons.org',
+                      ]) ? (
+                        <button onClick={() => void source(sense.license!.url)}>
+                          {sense.license.name}
+                        </button>
+                      ) : (
+                        sense.license.name
+                      )}
+                      . Display shortened to one meaning at a time; related
+                      lists limited to 3.
+                    </>
+                  ) : (
+                    'Text license was not supplied by the provider.'
+                  )}
+                </p>
+                {sense.audio ? (
+                  <p>
+                    Audio: {sense.audioLicense?.name || 'license not supplied'}.
+                    {sense.audioSource ? (
+                      <>
+                        {' '}
+                        <button onClick={() => void source(sense.audioSource!)}>
+                          Recording source
+                        </button>
+                      </>
+                    ) : null}
+                  </p>
+                ) : null}
+              </aside>
+            ) : null}
+          </>
+        )}
+      </main>
+    </Tooltip.Provider>
   );
 }

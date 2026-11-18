@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 48 48" fill="none">
   <title>WordPeek app icon</title>
-  <rect width="48" height="48" rx="12" fill="#166b60"/>
+  <rect width="48" height="48" rx="12" fill="#292c30"/>
   <g transform="translate(5 3) scale(.79)">
-    <path d="M8 12v23l16 5V17L8 12Z" fill="#f7f6f2"/>
-    <path d="M24 17v23l16-5V12l-16 5Z" fill="#f7f6f2" opacity=".7"/>
-    <path d="m15 22 4 13 5-10 5 10 4-13" stroke="#166b60" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M8 12v23l16 5V17L8 12Z" fill="#e9a078"/>
+    <path d="M24 17v23l16-5V12l-16 5Z" fill="#e9a078" opacity=".7"/>
+    <path d="m15 22 4 13 5-10 5 10 4-13" stroke="#292c30" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 </svg>

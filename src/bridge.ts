@@ -1,3 +1,4 @@
+import { buildSearchUrl, DEFAULT_SEARCH_SETTINGS } from '../shared/search.mjs';
 import type { DesktopBridge } from './types';
 
 const desktopRequired = async () => {
@@ -17,7 +18,7 @@ export const bridge: DesktopBridge = window.wordpeek ?? {
             code: 'unavailable',
             message:
               response.status === 404
-                ? 'No entry found. Try the base word or search Google.'
+                ? 'No entry found. Try the base word or search the web.'
                 : 'The dictionary is unavailable. Try again.',
           },
         };
@@ -33,12 +34,8 @@ export const bridge: DesktopBridge = window.wordpeek ?? {
       };
     }
   },
-  google: async (word) => {
-    window.open(
-      `https://www.google.com/search?q=${encodeURIComponent(`${word} meaning`)}`,
-      '_blank',
-      'noopener,noreferrer',
-    );
+  search: async (word) => {
+    window.open(buildSearchUrl(word), '_blank', 'noopener,noreferrer');
   },
   source: async (url) => {
     window.open(url, '_blank', 'noopener,noreferrer');
@@ -47,9 +44,13 @@ export const bridge: DesktopBridge = window.wordpeek ?? {
   hide: async () => undefined,
   context: async () => ({ word: '', message: '', revision: 0 }),
   settings: async () => ({
+    appearance: 'system',
     shortcut: 'Control+Alt+W',
     clipboardFallback: false,
+    ...DEFAULT_SEARCH_SETTINGS,
   }),
   saveSettings: desktopRequired,
+  onSettingsChanged: () => () => undefined,
+  onOpenSettings: () => () => undefined,
   onSelection: () => () => undefined,
 };

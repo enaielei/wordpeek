@@ -7,6 +7,7 @@ import {
   globalShortcut,
   ipcMain,
   nativeImage,
+  nativeTheme,
   screen,
   session,
   shell,
@@ -14,24 +15,27 @@ import {
   net,
 } from 'electron';
 import { execFile } from 'node:child_process';
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
+import { fetchEntry, normalizeQuery, safeSource } from './provider.mjs';
+
+import { buildSearchUrl } from '../shared/search.mjs';
 import {
-  fetchEntry,
-  googleUrl,
-  normalizeQuery,
-  safeSource,
-} from './provider.mjs';
+  DEFAULT_SETTINGS,
+  migrateSettings,
+  validateSettings,
+} from './settings.mjs';
+import { trayTemplate } from './tray.mjs';
 
 const directory = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(directory, '..');
 const run = promisify(execFile);
 const development =
   !app.isPackaged && process.env.WORDPEEK_DEV_URL === 'http://127.0.0.1:5173';
-const defaults = { shortcut: 'Control+Alt+W', clipboardFallback: false };
-let settings = { ...defaults };
+let settings = { ...DEFAULT_SETTINGS };
+let settingsQueue = Promise.resolve();
 let window;
 let tray;
 let quitting = false;
@@ -121,6 +125,106 @@ function registerShortcut(shortcut) {
   });
 }
 
+function applyAppearance() {
+  nativeTheme.themeSource = settings.appearance;
+  if (window)
+    window.setBackgroundColor(
+      nativeTheme.shouldUseDarkColors ? '#292c30' : '#f0f0ee',
+    );
+}
+
+function showSettings(message = '') {
+  showWindow();
+  window.webContents.send('window:settings', { message });
+}
+
+async function applySettings(input) {
+  let next;
+  try {
+    next = validateSettings(input);
+  } catch (error) {
+    return { ok: false, message: error.message };
+  }
+  const previous = settings;
+  if (next.shortcut !== previous.shortcut) {
+    try {
+      if (!registerShortcut(next.shortcut))
+        return {
+          ok: false,
+          message: 'That shortcut is already in use. Try another.',
+        };
+    } catch {
+      return {
+        ok: false,
+        message: 'That shortcut is not available. Try another.',
+      };
+    }
+  }
+  try {
+    const target = path.join(app.getPath('userData'), 'settings.json');
+    await writeFile(target + '.tmp', JSON.stringify(next, null, 2));
+    await rename(target + '.tmp', target);
+  } catch {
+    if (next.shortcut !== previous.shortcut)
+      globalShortcut.unregister(next.shortcut);
+    return { ok: false, message: 'Couldn’t save your settings. Try again.' };
+  }
+  settings = next;
+  applyAppearance();
+  if (next.shortcut !== previous.shortcut)
+    globalShortcut.unregister(previous.shortcut);
+  refreshTray();
+  window.webContents.send('settings:changed', settings);
+  return { ok: true, settings };
+}
+
+function commitSettings(input) {
+  const result = settingsQueue.then(() =>
+    applySettings(typeof input === 'function' ? input(settings) : input),
+  );
+  settingsQueue = result.catch(() => undefined);
+  return result;
+}
+
+function refreshTray() {
+  if (!tray) return;
+  tray.setContextMenu(
+    Menu.buildFromTemplate(
+      trayTemplate(settings, {
+        open: () => showWindow(),
+        settings: () => showSettings(),
+        clipboard: () => {
+          try {
+            showWindow({
+              word: normalizeQuery(clipboard.readText()),
+              message: '',
+            });
+          } catch {
+            showWindow({
+              word: '',
+              message: 'Copy an English word or short phrase first.',
+            });
+          }
+        },
+        update: async (patch) => {
+          const result = await commitSettings((current) => ({
+            ...current,
+            ...patch,
+          }));
+          if (!result.ok) {
+            refreshTray();
+            showSettings(result.message);
+          }
+        },
+        quit: () => {
+          quitting = true;
+          app.quit();
+        },
+      }),
+    ),
+  );
+}
+
 function trusted(event) {
   const url = event.senderFrame?.url;
   return (
@@ -164,7 +268,9 @@ function setupIpc() {
       };
     }
   });
-  handle('browser:google', (word) => shell.openExternal(googleUrl(word)));
+  handle('browser:search', (word) =>
+    shell.openExternal(buildSearchUrl(word, settings)),
+  );
   handle('browser:source', (url) => {
     const safe = safeSource(url);
     if (!safe) throw new Error('Unsupported source URL');
@@ -176,71 +282,23 @@ function setupIpc() {
     const bounds = window.getBounds();
     const area = screen.getDisplayMatching(bounds).workArea;
     const height = Math.max(
-      280,
-      Math.min(640, area.height, Math.ceil(requested)),
+      180,
+      Math.min(600, area.height, Math.ceil(requested)),
     );
     // Windows fixes the min/max bounds while a window is non-resizable.
     window.setResizable(true);
-    window.setMinimumSize(360, 280);
-    window.setSize(416, height);
+    window.setMinimumSize(280, 180);
+    window.setSize(304, height);
     window.setResizable(false);
     window.setPosition(
-      Math.max(area.x, Math.min(bounds.x, area.x + area.width - 416)),
+      Math.max(area.x, Math.min(bounds.x, area.x + area.width - 304)),
       Math.max(area.y, Math.min(bounds.y, area.y + area.height - height)),
     );
   });
   handle('window:hide', () => window.hide());
   handle('selection:context', () => latest);
   handle('settings:get', () => settings);
-  handle('settings:save', async (input) => {
-    if (
-      !input ||
-      typeof input.shortcut !== 'string' ||
-      input.shortcut.length > 80 ||
-      !/^(?:(?:Control|Alt|Shift|Super)\+){1,3}[A-Z0-9]$/.test(
-        input.shortcut,
-      ) ||
-      typeof input.clipboardFallback !== 'boolean'
-    ) {
-      return {
-        ok: false,
-        message: 'Use modifiers and one letter, for example Control+Alt+W.',
-      };
-    }
-    if (input.shortcut !== settings.shortcut) {
-      try {
-        if (!registerShortcut(input.shortcut))
-          return {
-            ok: false,
-            message: 'That shortcut is already in use. Try another.',
-          };
-      } catch {
-        return {
-          ok: false,
-          message: 'That shortcut is not available. Try another.',
-        };
-      }
-    }
-    const previous = settings;
-    const next = {
-      shortcut: input.shortcut,
-      clipboardFallback: input.clipboardFallback,
-    };
-    try {
-      await writeFile(
-        path.join(app.getPath('userData'), 'settings.json'),
-        JSON.stringify(next, null, 2),
-      );
-    } catch {
-      if (next.shortcut !== previous.shortcut)
-        globalShortcut.unregister(next.shortcut);
-      return { ok: false, message: 'Couldn’t save your settings. Try again.' };
-    }
-    settings = next;
-    if (next.shortcut !== previous.shortcut)
-      globalShortcut.unregister(previous.shortcut);
-    return { ok: true };
-  });
+  handle('settings:save', (input) => commitSettings(input));
 }
 
 if (!app.requestSingleInstanceLock()) app.quit();
@@ -265,38 +323,41 @@ else {
       });
       await mkdir(app.getPath('userData'), { recursive: true });
       try {
-        const loaded = JSON.parse(
-          await readFile(
-            path.join(app.getPath('userData'), 'settings.json'),
-            'utf8',
+        settings = migrateSettings(
+          JSON.parse(
+            await readFile(
+              path.join(app.getPath('userData'), 'settings.json'),
+              'utf8',
+            ),
           ),
         );
-        if (
-          typeof loaded.shortcut === 'string' &&
-          /^(?:(?:Control|Alt|Shift|Super)\+){1,3}[A-Z0-9]$/.test(
-            loaded.shortcut,
-          )
-        )
-          settings.shortcut = loaded.shortcut;
-        settings.clipboardFallback = loaded.clipboardFallback === true;
       } catch {
         /* First run uses defaults. */
       }
+      applyAppearance();
+      nativeTheme.on('updated', () => {
+        if (window)
+          window.setBackgroundColor(
+            nativeTheme.shouldUseDarkColors ? '#292c30' : '#f0f0ee',
+          );
+      });
       session.defaultSession.setPermissionRequestHandler(
         (_contents, _permission, callback) => callback(false),
       );
       session.defaultSession.setPermissionCheckHandler(() => false);
       window = new BrowserWindow({
-        width: 416,
-        height: 420,
-        minWidth: 360,
-        minHeight: 280,
+        width: 304,
+        height: 260,
+        minWidth: 280,
+        minHeight: 180,
         show: false,
         frame: false,
         resizable: false,
         alwaysOnTop: true,
         skipTaskbar: true,
-        backgroundColor: '#f7f6f2',
+        backgroundColor: nativeTheme.shouldUseDarkColors
+          ? '#292c30'
+          : '#f0f0ee',
         title: 'WordPeek',
         icon: path.join(root, 'assets/brand/icon.png'),
         webPreferences: {
@@ -323,35 +384,7 @@ else {
       );
       tray = new Tray(icon.resize({ width: 20, height: 20 }));
       tray.setToolTip('WordPeek — a little clarity');
-      tray.setContextMenu(
-        Menu.buildFromTemplate([
-          { label: 'Open WordPeek', click: () => showWindow() },
-          {
-            label: 'Look Up Clipboard',
-            click: () => {
-              try {
-                showWindow({
-                  word: normalizeQuery(clipboard.readText()),
-                  message: '',
-                });
-              } catch {
-                showWindow({
-                  word: '',
-                  message: 'Copy an English word or short phrase first.',
-                });
-              }
-            },
-          },
-          { type: 'separator' },
-          {
-            label: 'Quit WordPeek',
-            click: () => {
-              quitting = true;
-              app.quit();
-            },
-          },
-        ]),
-      );
+      refreshTray();
       tray.on('double-click', () => showWindow());
       let registered = false;
       try {

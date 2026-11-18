@@ -1,3 +1,4 @@
+import type { SearchPreferences } from '../shared/search.mjs';
 export interface License {
   name: string;
   url: string;
@@ -45,7 +46,8 @@ export interface SelectionContext {
   message: string;
   revision: number;
 }
-export interface Settings {
+export interface Settings extends SearchPreferences {
+  appearance: 'system' | 'light' | 'dark';
   shortcut: string;
   clipboardFallback: boolean;
 }
@@ -54,13 +56,17 @@ export type LookupResult =
   | { ok: false; error: { code: string; message: string } };
 export interface DesktopBridge {
   lookup(word: string): Promise<LookupResult>;
-  google(word: string): Promise<void>;
+  search(word: string): Promise<void>;
   source(url: string): Promise<void>;
   resize(height: number): Promise<void>;
   hide(): Promise<void>;
   context(): Promise<SelectionContext>;
   settings(): Promise<Settings>;
-  saveSettings(settings: Settings): Promise<{ ok: boolean; message?: string }>;
+  saveSettings(
+    settings: Settings,
+  ): Promise<{ ok: boolean; message?: string; settings?: Settings }>;
+  onSettingsChanged(callback: (settings: Settings) => void): () => void;
+  onOpenSettings(callback: (payload: { message: string }) => void): () => void;
   onSelection(callback: (context: SelectionContext) => void): () => void;
 }
 declare global {

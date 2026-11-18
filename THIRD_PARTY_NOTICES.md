@@ -23,3 +23,10 @@ notices before each public release, including new dependencies and source change
 
 Vercel skills are linked as references in docs/engineering-references.md, not copied
 or redistributed as part of WordPeek. Project instructions are original.
+
+## Manrope and Radix
+
+Manrope is bundled through @fontsource-variable/manrope under SIL Open Font
+License 1.1. Copyright 2019 The Manrope Project Authors. The full license is in
+assets/fonts/OFL-Manrope.txt and is included in packaged builds.
+Radix Select and Tooltip packages retain their MIT licenses.
