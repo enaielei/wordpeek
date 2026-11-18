@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0 — 2026-11-18
+
+- Independent keyboard and opt-in automatic selection triggers; passive automatic cards.
+- Warm native selection helper checks Chromium document selections beyond keyboard focus.
+- Draggable header and shortcut chips inside a key-capture input.
+- Grouped settings and seven configurable word-detail fields.
+- Broader-scope synonym/antonym display and explicit missing-content notes.
+- Alternate pronunciation recordings and labeled Windows voice fallback.
+- Removed clipboard controls and clipboard access.
+
 ## 0.2.0 — 2026-11-18
 
 - Compact 304 px popover with sans-serif typography, smaller padding, and tighter

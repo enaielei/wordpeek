@@ -2,6 +2,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('wordpeek', {
   lookup: (word) => ipcRenderer.invoke('dictionary:lookup', word),
+  recordShortcut: (active) => ipcRenderer.invoke('shortcut:record', active),
+  speak: (word) => ipcRenderer.invoke('pronunciation:speak', word),
   search: (word) => ipcRenderer.invoke('browser:search', word),
   source: (url) => ipcRenderer.invoke('browser:source', url),
   resize: (height) => ipcRenderer.invoke('window:resize', height),

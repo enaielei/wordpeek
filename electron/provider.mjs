@@ -68,13 +68,15 @@ export function safeAudio(value) {
   }
 }
 
-export async function fetchEntry(query, fetcher = fetch) {
+export async function fetchEntry(query, fetcher = fetch, signal) {
   const word = normalizeQuery(query);
   try {
     const response = await fetcher(
       `${ENDPOINT}${encodeURIComponent(word.toLowerCase())}`,
       {
-        signal: AbortSignal.timeout(10_000),
+        signal: signal
+          ? AbortSignal.any([signal, AbortSignal.timeout(10_000)])
+          : AbortSignal.timeout(10_000),
         redirect: 'error',
         headers: { Accept: 'application/json' },
       },

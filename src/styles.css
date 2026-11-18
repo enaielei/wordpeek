@@ -306,7 +306,7 @@ blockquote::after {
   height: 24px;
 }
 .eyebrow {
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 1.8px;
   font-weight: 650;
   color: var(--wp-accent);
@@ -595,4 +595,88 @@ blockquote::after {
 
 .card-footer {
   flex-wrap: wrap;
+}
+
+.app-header {
+  -webkit-app-region: drag;
+  user-select: none;
+  cursor: move;
+}
+.header-actions,
+button,
+input,
+select,
+[role='combobox'] {
+  -webkit-app-region: no-drag;
+}
+.settings fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0 0 10px;
+  min-width: 0;
+}
+.settings legend {
+  width: 100%;
+  border-bottom: 1px solid var(--wp-line);
+  padding: 0 0 4px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 650;
+}
+.settings fieldset > label:not(.checkbox-label) {
+  display: block;
+  font-size: 11px;
+  margin: 5px 0;
+}
+.settings fieldset > input {
+  width: 100%;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--wp-line);
+  border-radius: 6px;
+  color: var(--wp-ink);
+  background: var(--wp-surface);
+  font: inherit;
+}
+.detail-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px 8px;
+}
+.shortcut-input {
+  position: relative;
+  min-height: 31px;
+  margin-top: 5px;
+  border: 1px solid var(--wp-line);
+  border-radius: 6px;
+  background: var(--wp-surface);
+}
+.shortcut-input:focus-within {
+  outline: 2px solid var(--wp-focus);
+  outline-offset: 2px;
+}
+.shortcut-input input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: text;
+}
+.shortcut-input input:disabled {
+  cursor: default;
+}
+.shortcut-input-display {
+  min-height: 29px;
+  padding: 4px 6px;
+  pointer-events: none;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+}
+.provider-note,
+.audio-notice {
+  font-size: 11px;
+  color: var(--wp-muted);
+  margin: 6px 0 0;
 }

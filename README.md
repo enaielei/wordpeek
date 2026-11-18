@@ -9,14 +9,15 @@ Search with your chosen engine or custom URL in your default browser when you wa
 
 **Status: early Windows prototype, not a stable release.** No browser extension.
 Selection capture depends on the host app's Windows accessibility support. Unsupported
-apps can use manual entry or the explicit **Look Up Clipboard** tray command.
-Automatic selection popups and native context-menu integration are planned, not implemented.
+apps can use manual entry. Optional automatic selection cards appear without taking
+focus; click to interact and drag the header to move the card. Native context-menu
+integration remains deferred.
 
 ## Run locally
 
 Requires Windows 10/11, Node.js 24 LTS, npm, and an internet connection. No Rust/C++
-toolchain or API key is required. PowerShell must be allowed to run the bundled
-selection script; WordPeek does not change execution policy.
+toolchain or API key is required. The build compiles a small native helper using
+the Windows .NET Framework 4.x compiler and UI Automation/System.Speech assemblies.
 
 ```sh
 npm ci
@@ -42,14 +43,16 @@ the desktop app. macOS/Linux builds are not supported yet.
 ## What is shown
 
 - One dictionary sense per page, with its part of speech and phonetic text.
-- A pronunciation button when the provider supplies a supported recording.
+- Pronunciation tries provider recordings, then a clearly labeled Windows system voice.
 - One example, up to three synonyms, and up to three antonyms when available.
 - Meaning navigation only when there is more than one sense.
 - Configurable web search and expandable source/license information.
-- Tray quick settings for appearance, search engine, and clipboard fallback; a direct Settings entry.
+- Grouped Settings: Appearance, Triggers, Word details, and Search.
+- Independently enable keyboard and automatic triggers, and choose which detail fields appear.
+- Tray quick settings for appearance, search engine, and triggers; a direct Settings entry.
 
-Missing information is omitted. No fabricated examples or unrelated sense-wide
-synonyms are inserted to fill space. Meanings retain provider order; the app
+Missing enabled information is briefly identified. Broader part-of-speech relations
+are labeled; examples and relations are never fabricated. Meanings retain provider order; the app
 does not infer the intended meaning from a surrounding sentence.
 
 ## Online sources & privacy
@@ -57,12 +60,13 @@ does not infer the intended meaning from a surrounding sentence.
 The first provider is [Free Dictionary API](https://dictionaryapi.dev/), which
 returns Wiktionary-derived content. It is a public service without an uptime
 guarantee; failed lookups show actionable errors. See [source policy](docs/data-sources.md).
-Only an explicitly looked-up word/phrase goes to the provider. Audio is requested
+Only the looked-up word/phrase goes to the provider, including automatic lookups
+when you enable that trigger. Audio is requested
 only on playback. Your chosen search website receives the word when you press Search.
 
 There is no lookup history, telemetry, account, offline dictionary, or background
 clipboard monitoring. Preferences are saved locally in Electron's user-data directory.
-Clipboard fallback is off by default and requires explicit opt-in.
+WordPeek does not access the clipboard. Automatic lookup is off by default.
 
 ## Search preferences
 

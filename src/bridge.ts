@@ -34,6 +34,15 @@ export const bridge: DesktopBridge = window.wordpeek ?? {
       };
     }
   },
+  recordShortcut: async () => undefined,
+  speak: async (word) => {
+    if (!('speechSynthesis' in window)) return { ok: false };
+    const utterance = new SpeechSynthesisUtterance(word);
+    utterance.lang = 'en';
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+    return { ok: true };
+  },
   search: async (word) => {
     window.open(buildSearchUrl(word), '_blank', 'noopener,noreferrer');
   },
@@ -46,7 +55,17 @@ export const bridge: DesktopBridge = window.wordpeek ?? {
   settings: async () => ({
     appearance: 'system',
     shortcut: 'Control+Alt+W',
-    clipboardFallback: false,
+    shortcutEnabled: true,
+    autoPopupEnabled: false,
+    details: {
+      definition: true,
+      partOfSpeech: true,
+      phonetic: true,
+      pronunciation: true,
+      example: true,
+      synonyms: true,
+      antonyms: true,
+    },
     ...DEFAULT_SEARCH_SETTINGS,
   }),
   saveSettings: desktopRequired,

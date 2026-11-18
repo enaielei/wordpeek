@@ -33,14 +33,15 @@ dictionary entry cannot supply or change this destination.
 
 ## Tray shortcuts
 
-Right-click the WordPeek tray icon to open the dictionary, look up the clipboard,
-open Settings, pick a search engine, toggle clipboard fallback, or quit. Quick
+Right-click the WordPeek tray icon to open the dictionary,
+open Settings, pick a search engine, toggle selection triggers, or quit. Quick
 changes save immediately and update an open settings panel. Custom URL is selectable
 from the tray only after a valid template is saved in Settings.
 
 Settings are validated in the main process, written atomically, and serialized so
 simultaneous tray/panel updates do not race. Older preference files keep their
-shortcut and clipboard choice and gain Google as their initial search engine.
+shortcut and gain Google as their initial search engine. Legacy clipboard choices
+are discarded; automatic lookup defaults to off.
 Invalid saved search configuration falls back to Google; invalid new saves show
 an error and leave the existing configuration intact.
 
@@ -52,4 +53,10 @@ action opens the configured destination in your default browser.
 Settings and the tray support System, Light, and Dark appearance. The saved
 choice updates both native Electron surfaces and the HTML card and persists
 after restart. System follows the operating system. Shortcut chips show the
-configured keys while the text field remains editable.
+configured keys inside a capture input; focus it and press a modified letter or
+digit to change the shortcut. Tab moves on; Escape exits capture.
+
+Settings are grouped into Appearance, Triggers, Word details, and Search. Keyboard
+and automatic selection can be enabled independently, with at least one enabled.
+Word details independently control meaning, part of speech, phonetic spelling,
+pronunciation, example, synonyms, and antonyms, with at least one visible detail.

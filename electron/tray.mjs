@@ -11,7 +11,6 @@ export function trayTemplate(settings, actions) {
   const update = (patch) => void actions.update(patch);
   return [
     { id: 'open', label: 'Open WordPeek', click: actions.open },
-    { id: 'clipboard', label: 'Look Up Clipboard', click: actions.clipboard },
     { type: 'separator' },
     { id: 'settings', label: 'Settings…', click: actions.settings },
     {
@@ -49,11 +48,18 @@ export function trayTemplate(settings, actions) {
       ],
     },
     {
-      id: 'clipboard-fallback',
-      label: 'Clipboard Fallback',
+      id: 'shortcut-trigger',
+      label: 'Keyboard Shortcut',
       type: 'checkbox',
-      checked: settings.clipboardFallback,
-      click: () => update({ clipboardFallback: !settings.clipboardFallback }),
+      checked: settings.shortcutEnabled,
+      click: () => update({ shortcutEnabled: !settings.shortcutEnabled }),
+    },
+    {
+      id: 'auto-trigger',
+      label: 'Auto Popup on Selection',
+      type: 'checkbox',
+      checked: settings.autoPopupEnabled,
+      click: () => update({ autoPopupEnabled: !settings.autoPopupEnabled }),
     },
     { type: 'separator' },
     { id: 'quit', label: 'Quit WordPeek', click: actions.quit },

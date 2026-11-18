@@ -7,7 +7,6 @@ function setup(settings = DEFAULT_SETTINGS) {
   const actions = {
     open: vi.fn(),
     settings: vi.fn(),
-    clipboard: vi.fn(),
     quit: vi.fn(),
     update: vi.fn().mockResolvedValue({ ok: true }),
   };
@@ -16,12 +15,11 @@ function setup(settings = DEFAULT_SETTINGS) {
 }
 
 describe('tray quick settings', () => {
-  it('routes dictionary, settings, explicit clipboard lookup, and quit independently', () => {
+  it('routes dictionary, settings, and quit independently', () => {
     const { item, actions } = setup();
     for (const [id, action] of [
       ['open', 'open'],
       ['settings', 'settings'],
-      ['clipboard', 'clipboard'],
       ['quit', 'quit'],
     ]) {
       item(id).click();
@@ -46,18 +44,18 @@ describe('tray quick settings', () => {
       engines.find((engine) => engine.id === 'engine-custom').enabled,
     ).toBe(false);
   });
-  it('enables a configured custom destination and toggles the clipboard fallback', () => {
+  it('enables a custom destination and independently toggles triggers', () => {
     const { item, actions } = setup({
       ...DEFAULT_SETTINGS,
       customSearchUrl: 'https://example.com/?q={query}',
-      clipboardFallback: true,
+      autoPopupEnabled: true,
     });
     expect(
       item('search').submenu.find((engine) => engine.id === 'engine-custom')
         .enabled,
     ).toBe(true);
-    expect(item('clipboard-fallback').checked).toBe(true);
-    item('clipboard-fallback').click();
-    expect(actions.update).toHaveBeenCalledWith({ clipboardFallback: false });
+    expect(item('auto-trigger').checked).toBe(true);
+    item('auto-trigger').click();
+    expect(actions.update).toHaveBeenCalledWith({ autoPopupEnabled: false });
   });
 });

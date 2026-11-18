@@ -1,6 +1,6 @@
 {
   "name": "wordpeek",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "A little clarity, right where you read. An online desktop dictionary for English learners.",
   "author": "enaielei",
@@ -25,7 +25,11 @@
     "audit:runtime": "npm audit --omit=dev --audit-level=moderate",
     "test:desktop": "npm run build && node scripts/verify-desktop.mjs",
     "test:settings": "npm run build && node scripts/verify-settings.mjs",
-    "test:zoom": "npm run build && node scripts/verify-zoom.mjs"
+    "test:zoom": "npm run build && node scripts/verify-zoom.mjs",
+    "prebuild": "node scripts/build-native.mjs",
+    "predev": "node scripts/build-native.mjs",
+    "prestart": "node scripts/build-native.mjs",
+    "test:selection": "npm run build && node scripts/verify-selection.mjs"
   },
   "dependencies": {
     "@fontsource-variable/manrope": "5.3.0",
@@ -76,9 +80,7 @@
       "shared/**",
       "assets/fonts/OFL-Manrope.txt"
     ],
-    "asarUnpack": [
-      "electron/selection.ps1"
-    ],
+    "asarUnpack": [],
     "win": {
       "target": [
         {
@@ -94,6 +96,12 @@
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true
-    }
+    },
+    "extraResources": [
+      {
+        "from": "native/bin/WordPeek.Native.exe",
+        "to": "native/WordPeek.Native.exe"
+      }
+    ]
   }
 }

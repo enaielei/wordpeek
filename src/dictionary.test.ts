@@ -12,10 +12,13 @@ describe('sense normalization', () => {
     expect(senses[0].license?.name).toBe('CC BY-SA 3.0');
     expect(senses[0].source).toBe('https://en.wiktionary.org/wiki/bright');
   });
-  it('does not assign ambiguous part-of-speech relations to a sense', () => {
+  it('preserves part-of-speech relations with their broader scope', () => {
     const entry = structuredClone(fixture);
     entry[0].meanings![0].definitions![0].synonyms = [];
-    expect(toSenses(entry)[0].synonyms).toEqual([]);
+    expect(toSenses(entry)[0].synonyms).toEqual([
+      'not necessarily matched to the current sense',
+    ]);
+    expect(toSenses(entry)[0].synonymsScope).toBe('partOfSpeech');
   });
   it('omits unavailable data, rejects untrusted audio, and deduplicates senses', () => {
     const entries = [

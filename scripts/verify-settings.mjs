@@ -41,14 +41,25 @@ try {
     'Shift',
     'Y',
   ]);
-  await page.getByRole('combobox', { name: 'Appearance' }).click();
+  expect(await page.locator('.shortcut-input kbd').count()).toBe(4);
+  await page.getByRole('textbox', { name: 'Lookup shortcut' }).focus();
+  await page.keyboard.press('Control+Alt+Shift+U');
+  await expect(
+    page.getByRole('textbox', { name: 'Lookup shortcut' }),
+  ).toHaveValue('Control+Alt+Shift+U');
+  await expect(
+    page.getByRole('heading', { name: 'Settings', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('checkbox', { name: 'Synonyms', exact: true }).uncheck();
+  await page.getByRole('combobox', { name: 'Theme' }).click();
   await page.keyboard.press('Escape');
   await expect(
     page.getByRole('heading', { name: 'Settings', exact: true }),
   ).toBeVisible();
-  await expect(
-    page.getByRole('combobox', { name: 'Appearance' }),
-  ).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.getByRole('combobox', { name: 'Theme' })).toHaveAttribute(
+    'aria-expanded',
+    'false',
+  );
   await choose(page, 'Search engine', 'DuckDuckGo');
   await page.getByRole('button', { name: 'Save Settings' }).click();
   await expect(page.getByRole('status')).toHaveText('Settings saved.');
@@ -68,9 +79,11 @@ try {
     page.getByRole('combobox', { name: 'Search engine' }),
   ).toHaveText('Bing');
   await application.evaluate(() =>
-    globalThis.wordpeekTestMenu.getMenuItemById('clipboard-fallback').click(),
+    globalThis.wordpeekTestMenu.getMenuItemById('auto-trigger').click(),
   );
-  await expect(page.getByRole('checkbox')).toBeChecked();
+  await expect(
+    page.getByRole('checkbox', { name: 'Auto popup on text selection' }),
+  ).toBeChecked();
   await choose(page, 'Search engine', 'Custom URL…');
   await page
     .getByRole('textbox', { name: 'Custom search URL' })
@@ -98,16 +111,19 @@ try {
   await page.locator('main').evaluate((element) => {
     element.scrollTop = 0;
   });
-  await choose(page, 'Appearance', 'Light');
+  await choose(page, 'Theme', 'Light');
   await page.getByRole('button', { name: 'Save Settings' }).click();
   await expect(page.locator('html')).toHaveAttribute(
     'data-appearance',
     'light',
   );
+  await page.locator('main').evaluate((element) => {
+    element.scrollTop = 0;
+  });
   await page.screenshot({
     path: path.join(output, 'wordpeek-settings-light.png'),
   });
-  await choose(page, 'Appearance', 'Dark');
+  await choose(page, 'Theme', 'Dark');
   await page.getByRole('button', { name: 'Save Settings' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-appearance', 'dark');
   expect(
@@ -126,6 +142,9 @@ try {
       ),
     )
     .toBe(true);
+  await page.locator('main').evaluate((element) => {
+    element.scrollTop = 0;
+  });
   await page.screenshot({
     path: path.join(output, 'wordpeek-settings-dark.png'),
   });
@@ -157,7 +176,9 @@ try {
     appearance: 'dark',
     searchEngine: 'custom',
     customSearchUrl: 'https://example.com/define/{query}?from=wordpeek',
-    clipboardFallback: true,
+    autoPopupEnabled: true,
+    shortcut: 'Control+Alt+Shift+U',
+    details: { synonyms: false },
   });
   await application.evaluate(() =>
     globalThis.wordpeekTestMenu.getMenuItemById('engine-google').click(),
@@ -174,7 +195,7 @@ try {
     await application.evaluate(() => globalThis.wordpeekTestExternal),
   ).toEqual(['https://www.google.com/search?q=take%20off%20meaning']);
   console.log(
-    'PASS: legacy migration; settings from tray; preset/custom saves; tray synchronization; clipboard toggle; encoded external search; invalid-save rejection; restart persistence. Browser navigation was intercepted.',
+    'PASS: legacy migration; settings from tray; preset/custom saves; tray synchronization; trigger toggle; encoded external search; invalid-save rejection; restart persistence. Browser navigation was intercepted.',
   );
 } finally {
   await application.close();

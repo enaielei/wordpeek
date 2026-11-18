@@ -92,18 +92,20 @@ Information order:
 3. Headword; pronunciation and external-search icon buttons.
 4. Part of speech and phonetic text.
 5. One meaning and one example if supplied.
-6. Up to three sense-specific synonyms and antonyms when supplied.
+6. Up to three synonyms and antonyms when supplied; label broader part-of-speech lists.
 7. Source/license disclosure and previous/next meanings.
 
 Do not add etymology, translations, AI explanations, ads, daily words, streaks,
 large tab bars, or promotional copy to the core card. Future additions need an
-explicit product decision. Missing fields disappear; no empty headings.
+explicit product decision. Missing fields have no empty headings; one compact note may identify enabled but missing content.
 
 ## Components and interactions
 
 Use Radix Primitives with WordPeek CSS for Select and Tooltip behavior. Do not
 introduce a pre-styled design system or replace the approved density defaults.
-Keyboard shortcuts use small native `kbd` chips with plus separators.
+Keyboard shortcuts use small native `kbd` chips with plus separators inside the
+shortcut capture field. Settings use Appearance, Triggers, Word details, and Search
+fieldsets. Automatic cards never take focus; drag the header to reposition.
 
 ## Icons and interactions
 
@@ -112,8 +114,8 @@ ArrowUpRight, ChevronLeft, ChevronRight, Settings2, X, Search, ArrowLeft, Check.
 Icons: 14 px in 24 × 24 px targets, 1.75 stroke, round caps. Never use emoji icons.
 All icon-only controls require an accessible name and a useful tooltip.
 
-- Pronunciation is the only softly filled headword action. Disable it when no
-  supported recording exists and explain that state in the label/tooltip.
+- Pronunciation is the only softly filled headword action. Try supplied recordings,
+  then system speech, clearly labeling that fallback. No automatic playback.
 - External-search arrow identifies the saved engine (for example, “Search Bing”)
   or custom URL in its tooltip and accessible name. It opens the default browser.
 - Pagination: ‹ 1 / 3 ›; no wrapping. Disable the unavailable edge. Hide it for
