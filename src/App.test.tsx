@@ -5,7 +5,7 @@ import { fixture } from './test/fixtures';
 
 const mock = vi.hoisted(() => ({
   lookup: vi.fn(),
-  google: vi.fn(),
+  search: vi.fn(),
   hide: vi.fn(),
 }));
 vi.mock('./bridge', () => ({
@@ -13,10 +13,15 @@ vi.mock('./bridge', () => ({
     ...mock,
     context: async () => ({ word: '', message: '', revision: 0 }),
     settings: async () => ({
+      appearance: 'system',
       shortcut: 'Control+Alt+W',
       clipboardFallback: false,
+      searchEngine: 'google',
+      customSearchUrl: '',
     }),
     resize: async () => undefined,
+    onSettingsChanged: () => () => undefined,
+    onOpenSettings: () => () => undefined,
     onSelection: () => () => undefined,
     saveSettings: async () => ({ ok: true }),
   },
@@ -64,12 +69,15 @@ describe('compact vocabulary card', () => {
   it('hands the looked-up word to Google even if the input has been edited', async () => {
     const user = await lookup();
     await screen.findByText('Giving off a lot of light.');
+    await user.click(
+      screen.getByRole('button', { name: 'Look up another word' }),
+    );
     await user.clear(screen.getByRole('textbox'));
     await user.type(screen.getByRole('textbox'), 'different');
     await user.click(
       screen.getByRole('button', { name: 'Search Google for bright' }),
     );
-    expect(mock.google).toHaveBeenCalledWith('bright');
+    expect(mock.search).toHaveBeenCalledWith('bright');
   });
   it('hides absent fields and pagination for a single sense', async () => {
     mock.lookup.mockResolvedValue({

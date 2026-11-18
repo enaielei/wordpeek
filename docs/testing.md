@@ -8,7 +8,7 @@ fixtures; live dictionary uptime must not decide whether PR CI passes.
 
 Provider tests cover invalid input, URL validation, 404/429/server failures,
 timeout/network errors, response bounds, and source data preservation. UI tests cover
-sense navigation, hidden empty fields, error recovery, and Google handoff. Do not
+sense navigation, hidden empty fields, error recovery, and configured web-search handoff. Do not
 add implementation-mirroring tests or arbitrary global coverage thresholds.
 
 The Windows build job creates an unsigned unpacked app. A manual installer workflow
@@ -47,7 +47,9 @@ mark unperformed checks as passed.
 - Shortcut can be changed and persists after restart. A conflict produces an error.
 - Popup is on-screen near the cursor on primary/secondary displays at different DPI.
 - Escape and clicking another app hide the popover; pagination remains usable.
-- Google opens the default browser with the correct encoded query; source links work.
+- Selected search presets and custom URLs open with the correct encoded query; source links work.
+- Tray opens Settings and updates engine/clipboard preferences. Panel, tray, and
+  saved configuration agree after changes and restart. Invalid templates do not save.
 - Audio only loads after playback; recording failure has a useful message.
 - Unavailable internet, a missing word, and a provider failure show retry/search.
 - Keyboard-only use, light/dark, 100%/200% zoom, long words/content, missing fields,
@@ -58,3 +60,17 @@ mark unperformed checks as passed.
 Use docs/brand/index.html for the visual reference and src/brand/tokens.css for
 canonical values. Validate normal-text contrast with the actual semantic color
 pairs; visual screenshots alone do not establish accessibility compliance.
+
+## Approved 0.2.0 design verification
+
+- Brand contrast checks cover small primary/secondary text on actual light/dark
+  surfaces; orange text is reserved for backgrounds where contrast meets AA.
+- Quality suite: 52 tests, formatting, lint, strict types, and production build.
+- Isolated desktop tests cover legacy migration, actual Radix settings controls,
+  shortcut chips, menu Escape behavior, appearance saving, tray synchronization,
+  custom search encoding, invalid-save rejection, and restart persistence.
+- Live dictionary smoke covers meaning navigation, source attribution, compact
+  window sizing, light/dark screenshots, and Escape dismissal.
+- Runtime dependency audit remains clean; build-tool advisories remain in #2.
+- Source-app tests use separate profiles/hotkeys and intercept external searches.
+  The user's installed running instance is not stopped or reconfigured.

@@ -1,5 +1,5 @@
 import { _electron as electron, expect } from '@playwright/test';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 
@@ -7,9 +7,18 @@ const root = process.cwd();
 const output =
   process.env.WORDPEEK_ARTIFACTS || path.join(root, 'test-results');
 await mkdir(output, { recursive: true });
+await mkdir(path.join(root, 'test-results'), { recursive: true });
+const profile = await mkdtemp(path.join(root, 'test-results/desktop-'));
+await writeFile(
+  path.join(profile, 'settings.json'),
+  JSON.stringify({ shortcut: 'Control+Alt+Shift+Y', clipboardFallback: false }),
+);
 const application = await electron.launch({
   executablePath: process.env.WORDPEEK_EXECUTABLE || undefined,
-  args: process.env.WORDPEEK_EXECUTABLE ? [] : ['.'],
+  args: process.env.WORDPEEK_EXECUTABLE
+    ? [`--user-data-dir=${profile}`]
+    : ['scripts/testing/settings-harness.cjs'],
+  env: { ...process.env, WORDPEEK_TEST_PROFILE: profile },
   cwd: root,
   timeout: 30_000,
 });
@@ -64,7 +73,7 @@ try {
   await page.getByRole('button', { name: 'Open settings' }).click();
   await expect(
     page.getByRole('textbox', { name: 'Lookup shortcut' }),
-  ).toHaveValue('Control+Alt+W');
+  ).toHaveValue('Control+Alt+Shift+Y');
   await expect(page.getByRole('checkbox')).not.toBeChecked();
   await page.getByRole('button', { name: 'Back to dictionary' }).click();
   // Dismissal is tested against the real BrowserWindow, not a renderer mock.

@@ -5,7 +5,7 @@
 An online-first desktop dictionary for people learning English. Select a word,
 press a shortcut, and see a compact HTML/CSS card: one meaning, pronunciation,
 an example, and relevant synonyms and antonyms. Move through meanings with **‹ / ›**.
-Open Google in your default browser when you want more.
+Search with your chosen engine or custom URL in your default browser when you want more.
 
 **Status: early Windows prototype, not a stable release.** No browser extension.
 Selection capture depends on the host app's Windows accessibility support. Unsupported
@@ -45,7 +45,8 @@ the desktop app. macOS/Linux builds are not supported yet.
 - A pronunciation button when the provider supplies a supported recording.
 - One example, up to three synonyms, and up to three antonyms when available.
 - Meaning navigation only when there is more than one sense.
-- Google search and expandable source/license information.
+- Configurable web search and expandable source/license information.
+- Tray quick settings for appearance, search engine, and clipboard fallback; a direct Settings entry.
 
 Missing information is omitted. No fabricated examples or unrelated sense-wide
 synonyms are inserted to fill space. Meanings retain provider order; the app
@@ -57,15 +58,25 @@ The first provider is [Free Dictionary API](https://dictionaryapi.dev/), which
 returns Wiktionary-derived content. It is a public service without an uptime
 guarantee; failed lookups show actionable errors. See [source policy](docs/data-sources.md).
 Only an explicitly looked-up word/phrase goes to the provider. Audio is requested
-only on playback. Google receives the word when you press Search Google.
+only on playback. Your chosen search website receives the word when you press Search.
 
 There is no lookup history, telemetry, account, offline dictionary, or background
 clipboard monitoring. Preferences are saved locally in Electron's user-data directory.
 Clipboard fallback is off by default and requires explicit opt-in.
 
+## Search preferences
+
+Choose Google, Bing, DuckDuckGo, Brave Search, Ecosia, or a custom HTTPS URL in
+Settings. Use `{query}` once, for example `https://example.com/search?q={query}`.
+The word is URL-encoded before substitution. See [search settings](docs/search-settings.md).
+
 ## Brand
 
 ![WordPeek brand foundations](assets/brand/brand-board.png)
+
+The approved identity uses locally bundled **Manrope**, compact **Radix** controls,
+and softened neutral surfaces with **tangerine accents**. Settings offer System,
+Light, and Dark appearance; keyboard shortcuts render as small key chips.
 
 Read the [brand guidelines](docs/brand-guidelines.md) before changing visible UI or assets.
 

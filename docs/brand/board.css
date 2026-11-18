@@ -1,21 +1,28 @@
+@font-face {
+  font-family: 'Manrope Variable';
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('../../node_modules/@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2')
+    format('woff2');
+}
 /* Presentation-only board layout. Canonical app colors live in tokens.css. */
 :root {
   color-scheme: light;
-  --paper: #f7f6f2;
-  --wp-paper: #f7f6f2;
-  --wp-ink: #202e2b;
-  --wp-muted: #626d68;
-  --wp-accent: #166b60;
-  --wp-line: #dcded6;
+  --paper: #f0f0ee;
+  --wp-paper: #f0f0ee;
+  --wp-ink: #3d4045;
+  --wp-muted: #686b70;
+  --wp-accent: #b54816;
+  --wp-line: #d0d2d3;
 }
 * {
   box-sizing: border-box;
 }
 body {
   margin: 0;
-  background: #e9eae3;
+  background: #dddfe1;
   color: var(--wp-ink);
-  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-family: 'Manrope Variable', 'Segoe UI', system-ui, sans-serif;
 }
 main {
   max-width: 1240px;
@@ -72,7 +79,7 @@ main {
   margin: 0 0 26px;
 }
 h1 {
-  font-family: Georgia, serif;
+  font-family: 'Manrope Variable', 'Segoe UI', system-ui, sans-serif;
   font-size: 66px;
   line-height: 1.08;
   letter-spacing: -3.5px;
@@ -102,7 +109,7 @@ h1 > span {
 }
 .specimen-wrap {
   padding: 26px;
-  background: #e9eee8;
+  background: #e5e6e6;
   border-radius: 3px;
 }
 .specimen-label {
@@ -119,12 +126,12 @@ h1 > span {
 .specimen {
   border-radius: 16px;
   background: var(--paper);
-  border: 1px solid #d9e0d6;
+  border: 1px solid #d0d2d3;
   box-shadow: 0 16px 32px rgb(32 46 43 / 9%);
   overflow: hidden;
 }
 .specimen header {
-  padding: 14px 20px;
+  padding: 8px 14px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -145,7 +152,7 @@ h1 > span {
   color: var(--wp-muted);
 }
 .specimen-body {
-  padding: 26px 24px 30px;
+  padding: 18px 16px;
 }
 .specimen-title {
   display: flex;
@@ -154,8 +161,8 @@ h1 > span {
   gap: 8px;
 }
 .specimen h2 {
-  font-family: Georgia, serif;
-  font-size: 32px;
+  font-family: 'Manrope Variable', 'Segoe UI', system-ui, sans-serif;
+  font-size: 25px;
   font-weight: 400;
   letter-spacing: -1.3px;
   margin: 0;
@@ -174,7 +181,7 @@ h1 > span {
   border-radius: 7px;
 }
 .demo-icon.filled {
-  background: #e4efea;
+  background: #e5e6e6;
   color: var(--wp-accent);
 }
 .demo-icon svg {
@@ -196,12 +203,12 @@ h1 > span {
   padding: 0 8px;
 }
 .definition {
-  font-size: 16px;
-  line-height: 1.65;
-  margin: 24px 0 18px;
+  font-size: 15px;
+  line-height: 1.5;
+  margin: 14px 0 12px;
 }
 blockquote {
-  margin: 0 0 23px;
+  margin: 0 0 12px;
   color: var(--wp-muted);
   padding-left: 12px;
   border-left: 2px solid var(--wp-accent);
@@ -305,7 +312,7 @@ h3 {
 }
 .section-label h2 {
   font-size: 25px;
-  font-family: Georgia, serif;
+  font-family: 'Manrope Variable', 'Segoe UI', system-ui, sans-serif;
   font-weight: 400;
   letter-spacing: -0.8px;
   margin: 16px 0;
@@ -340,18 +347,18 @@ h3 {
   color: var(--wp-muted);
 }
 .logo-tile.teal {
-  --paper: #166b60;
-  background: #166b60;
-  border-color: #166b60;
+  --paper: #b54816;
+  background: #b54816;
+  border-color: #b54816;
 }
 .logo-tile.teal svg {
-  color: #f7f6f2;
+  color: #f0f0ee;
 }
 .logo-tile.teal > span {
-  color: #e4efea;
+  color: #e5e6e6;
 }
 .logo-tile.icon {
-  background: #e9eee8;
+  background: #e5e6e6;
 }
 .palette {
   padding: 0 0 48px;
@@ -390,21 +397,21 @@ h3 {
   letter-spacing: 0.6px;
 }
 .ink {
-  background: #202e2b;
-  color: #f7f6f2;
+  background: #3d4045;
+  color: #f0f0ee;
 }
 .accent {
-  background: #166b60;
-  color: #f7f6f2;
+  background: #b54816;
+  color: #f0f0ee;
 }
 .soft {
-  background: #e4efea;
+  background: #e5e6e6;
 }
 .swatch.paper {
   border-color: var(--wp-line);
 }
 .muted {
-  background: #626d68;
+  background: #686b70;
   color: white;
 }
 .details {
@@ -415,7 +422,7 @@ h3 {
 }
 .display-sample {
   font-size: 38px;
-  font-family: Georgia, serif;
+  font-family: 'Manrope Variable', 'Segoe UI', system-ui, sans-serif;
   letter-spacing: -1.5px;
   margin: 22px 0 12px;
 }
@@ -460,7 +467,7 @@ h3 {
   stroke-linejoin: round;
 }
 .icons-panel h3 {
-  font-family: Georgia, serif;
+  font-family: 'Manrope Variable', 'Segoe UI', system-ui, sans-serif;
   font-size: 26px;
   font-weight: 400;
   letter-spacing: -0.5px;
@@ -578,4 +585,16 @@ h3 {
     max-width: 150px;
     text-align: right;
   }
+}
+
+.logo-tile.teal {
+  background: #292c30;
+  border-color: #292c30;
+  --paper: #292c30;
+}
+.logo-tile.teal svg {
+  color: #e9a078;
+}
+.logo-tile.teal > span {
+  color: #d6d8dc;
 }

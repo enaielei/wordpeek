@@ -29,7 +29,7 @@ release, review attribution completeness against real provider audio records.
 ## Reliability and provider evaluation
 
 Current provider has reported downtime and no contractual SLA. Use clear failure
-states and keep Google available; do not promise guaranteed dictionary availability.
+states and keep configured web search available; do not promise guaranteed dictionary availability.
 Before adding another provider, assess public API support, English-learner quality,
 coverage, pronunciation/example completeness, licensing, attribution, limits, costs,
 and privacy. Test polysemous words and missing data. Do not splice unrelated senses

@@ -82,7 +82,7 @@ export async function fetchEntry(query, fetcher = fetch) {
     if (response.status === 404)
       throw new LookupError(
         'not-found',
-        'No entry found. Try the base word or search Google.',
+        'No entry found. Try the base word or search the web.',
       );
     if (response.status === 429)
       throw new LookupError(
@@ -92,7 +92,7 @@ export async function fetchEntry(query, fetcher = fetch) {
     if (!response.ok)
       throw new LookupError(
         'unavailable',
-        'The dictionary is unavailable. Try again or search Google.',
+        'The dictionary is unavailable. Try again or search the web.',
       );
     if (!response.body)
       throw new LookupError(
@@ -111,7 +111,7 @@ export async function fetchEntry(query, fetcher = fetch) {
         if (size > 1_000_000)
           throw new LookupError(
             'unavailable',
-            'This dictionary entry is too large. Search Google instead.',
+            'This dictionary entry is too large. Search the web instead.',
           );
         body += decoder.decode(value, { stream: true });
       }
@@ -131,7 +131,7 @@ export async function fetchEntry(query, fetcher = fetch) {
     if (error?.name === 'TimeoutError' || error?.name === 'AbortError')
       throw new LookupError(
         'timeout',
-        'The dictionary took too long. Try again or search Google.',
+        'The dictionary took too long. Try again or search the web.',
       );
     throw new LookupError(
       'network',

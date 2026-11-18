@@ -1,6 +1,6 @@
 {
   "name": "wordpeek",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "A little clarity, right where you read. An online desktop dictionary for English learners.",
   "author": "enaielei",
@@ -23,9 +23,13 @@
     "package:win": "npm run build && electron-builder --win nsis --publish never",
     "brand:icons": "node scripts/icons.mjs",
     "audit:runtime": "npm audit --omit=dev --audit-level=moderate",
-    "test:desktop": "npm run build && node scripts/verify-desktop.mjs"
+    "test:desktop": "npm run build && node scripts/verify-desktop.mjs",
+    "test:settings": "npm run build && node scripts/verify-settings.mjs"
   },
   "dependencies": {
+    "@fontsource-variable/manrope": "5.3.0",
+    "@radix-ui/react-select": "2.4.1",
+    "@radix-ui/react-tooltip": "1.4.1",
     "lucide-react": "1.74.0",
     "react": "19.3.1",
     "react-dom": "19.3.1"
@@ -67,7 +71,9 @@
       "assets/brand/icon.png",
       "package.json",
       "LICENSE",
-      "THIRD_PARTY_NOTICES.md"
+      "THIRD_PARTY_NOTICES.md",
+      "shared/**",
+      "assets/fonts/OFL-Manrope.txt"
     ],
     "asarUnpack": [
       "electron/selection.ps1"
