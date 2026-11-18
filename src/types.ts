@@ -32,6 +32,9 @@ export interface Sense {
   partOfSpeech: string;
   phonetic?: string;
   audio?: string;
+  recordings?: string[];
+  synonymsScope?: 'sense' | 'partOfSpeech';
+  antonymsScope?: 'sense' | 'partOfSpeech';
   audioSource?: string;
   audioLicense?: License;
   definition: string;
@@ -45,17 +48,30 @@ export interface SelectionContext {
   word: string;
   message: string;
   revision: number;
+  passive?: boolean;
 }
 export interface Settings extends SearchPreferences {
   appearance: 'system' | 'light' | 'dark';
   shortcut: string;
-  clipboardFallback: boolean;
+  shortcutEnabled: boolean;
+  autoPopupEnabled: boolean;
+  details: {
+    definition: boolean;
+    partOfSpeech: boolean;
+    phonetic: boolean;
+    pronunciation: boolean;
+    example: boolean;
+    synonyms: boolean;
+    antonyms: boolean;
+  };
 }
 export type LookupResult =
   | { ok: true; entries: DictionaryEntry[] }
   | { ok: false; error: { code: string; message: string } };
 export interface DesktopBridge {
   lookup(word: string): Promise<LookupResult>;
+  recordShortcut(active: boolean): Promise<void>;
+  speak(word: string): Promise<{ ok: boolean }>;
   search(word: string): Promise<void>;
   source(url: string): Promise<void>;
   resize(height: number): Promise<void>;

@@ -69,13 +69,45 @@ describe('configured search destinations', () => {
 });
 
 describe('preference migration and validation', () => {
-  it('keeps old shortcut/clipboard choices when adding search preferences', () => {
+  it('supports either trigger or both and rejects disabling all triggers/details', () => {
+    for (const [shortcutEnabled, autoPopupEnabled] of [
+      [true, false],
+      [false, true],
+      [true, true],
+    ])
+      expect(
+        validateSettings({
+          ...DEFAULT_SETTINGS,
+          shortcutEnabled,
+          autoPopupEnabled,
+        }),
+      ).toMatchObject({ shortcutEnabled, autoPopupEnabled });
+    expect(() =>
+      validateSettings({
+        ...DEFAULT_SETTINGS,
+        shortcutEnabled: false,
+        autoPopupEnabled: false,
+      }),
+    ).toThrow();
+    expect(() =>
+      validateSettings({
+        ...DEFAULT_SETTINGS,
+        details: Object.fromEntries(
+          Object.keys(DEFAULT_SETTINGS.details).map((key) => [key, false]),
+        ),
+      }),
+    ).toThrow();
+    expect(
+      migrateSettings({ shortcutEnabled: false, autoPopupEnabled: false })
+        .shortcutEnabled,
+    ).toBe(true);
+  });
+  it('preserves the shortcut and discards obsolete clipboard preferences', () => {
     expect(
       migrateSettings({ shortcut: 'Control+Shift+Q', clipboardFallback: true }),
     ).toEqual({
       ...DEFAULT_SETTINGS,
       shortcut: 'Control+Shift+Q',
-      clipboardFallback: true,
     });
   });
   it('preserves a valid custom URL across restarts', () => {
@@ -100,7 +132,7 @@ describe('preference migration and validation', () => {
     });
     expect(() => validateSettings(invalid)).toThrow();
     expect(() =>
-      validateSettings({ ...DEFAULT_SETTINGS, clipboardFallback: 'true' }),
+      validateSettings({ ...DEFAULT_SETTINGS, shortcutEnabled: 'true' }),
     ).toThrow();
   });
 });

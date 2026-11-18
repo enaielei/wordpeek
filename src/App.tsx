@@ -50,18 +50,40 @@ export function App() {
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [audioNotice, setAudioNotice] = useState('');
+  const playback = useRef(0);
   const [actionMessage, setActionMessage] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settings, setSettings] = useState<Settings>({
     appearance: 'system',
     shortcut: 'Control+Alt+W',
-    clipboardFallback: false,
+    shortcutEnabled: true,
+    autoPopupEnabled: false,
+    details: {
+      definition: true,
+      partOfSpeech: true,
+      phonetic: true,
+      pronunciation: true,
+      example: true,
+      synonyms: true,
+      antonyms: true,
+    },
     ...DEFAULT_SEARCH_SETTINGS,
   });
   const [preferences, setPreferences] = useState<Settings>({
     appearance: 'system',
     shortcut: 'Control+Alt+W',
-    clipboardFallback: false,
+    shortcutEnabled: true,
+    autoPopupEnabled: false,
+    details: {
+      definition: true,
+      partOfSpeech: true,
+      phonetic: true,
+      pronunciation: true,
+      example: true,
+      synonyms: true,
+      antonyms: true,
+    },
     ...DEFAULT_SEARCH_SETTINGS,
   });
   useEffect(() => {
@@ -93,10 +115,12 @@ export function App() {
     settingsOpen,
     sourceOpen,
     actionMessage,
+    audioNotice,
     settingsMessage,
     searchVisible,
     settings.searchEngine,
     settings.customSearchUrl,
+    preferences.details,
   ]);
 
   const lookup = useCallback(async (value: string) => {
@@ -104,6 +128,7 @@ export function App() {
     const id = ++request.current;
     setQuery(word);
     setSearched(word);
+    setAudioNotice('');
     setSearchVisible(false);
     setActionMessage('');
     setSourceOpen(false);
@@ -153,7 +178,7 @@ export function App() {
         setSearched('');
         setSenses([]);
       }
-      input.current?.focus();
+      if (!context.passive) input.current?.focus();
     };
     const unsubscribe = bridge.onSelection(receive);
     const unsubscribeSettings = bridge.onSettingsChanged((value) => {
@@ -192,6 +217,7 @@ export function App() {
   }, [lookup]);
 
   useEffect(() => {
+    playback.current++;
     audio.current?.pause();
     audio.current = null;
   }, [page, searched]);
@@ -218,10 +244,12 @@ export function App() {
         return;
       if (event.key === 'ArrowLeft') {
         event.preventDefault();
+        setAudioNotice('');
         setPage((value) => Math.max(0, value - 1));
       }
       if (event.key === 'ArrowRight') {
         event.preventDefault();
+        setAudioNotice('');
         setPage((value) => Math.min(senses.length - 1, value + 1));
       }
     };
@@ -244,16 +272,49 @@ export function App() {
     }
   }
   async function speak() {
-    if (!sense?.audio) return;
+    if (!sense) return;
+    const id = ++playback.current;
+    setAudioNotice('');
     audio.current?.pause();
-    const player = new Audio(sense.audio);
-    audio.current = player;
+    for (const url of sense.recordings?.length
+      ? sense.recordings
+      : sense.audio
+        ? [sense.audio]
+        : []) {
+      const player = new Audio(url);
+      audio.current = player;
+      let timeout: ReturnType<typeof setTimeout> | undefined;
+      try {
+        await Promise.race([
+          player.play(),
+          new Promise<never>((_, reject) => {
+            timeout = setTimeout(
+              () => reject(new Error('Audio timeout')),
+              3500,
+            );
+          }),
+        ]);
+        clearTimeout(timeout);
+        if (id === playback.current) return;
+        player.pause();
+        return;
+      } catch {
+        clearTimeout(timeout);
+        player.pause();
+        if (id !== playback.current) return;
+      }
+    }
     try {
-      await player.play();
+      const result = await bridge.speak(sense.word);
+      if (id === playback.current)
+        setAudioNotice(
+          result.ok
+            ? 'Using the system voice; no working recording was provided.'
+            : 'No working recording or system voice is available.',
+        );
     } catch {
-      setActionMessage(
-        'Pronunciation couldn’t play. Try again or search the web.',
-      );
+      if (id === playback.current)
+        setAudioNotice('No working recording or system voice is available.');
     }
   }
   async function save() {
@@ -390,23 +451,16 @@ export function App() {
                   <div className="word-heading">
                     <h1>{sense.word}</h1>
                     <div className="word-actions">
-                      <IconButton
-                        className="icon-button accent-button"
-                        aria-label={
-                          sense.audio
-                            ? `Play pronunciation of ${sense.word}`
-                            : 'Pronunciation unavailable'
-                        }
-                        title={
-                          sense.audio
-                            ? 'Play pronunciation'
-                            : 'No recording available'
-                        }
-                        disabled={!sense.audio}
-                        onClick={() => void speak()}
-                      >
-                        <Volume2 aria-hidden="true" />
-                      </IconButton>
+                      {preferences.details.pronunciation ? (
+                        <IconButton
+                          className="icon-button accent-button"
+                          aria-label={`Play pronunciation of ${sense.word}`}
+                          title="Play pronunciation (system voice if recording fails)"
+                          onClick={() => void speak()}
+                        >
+                          <Volume2 aria-hidden="true" />
+                        </IconButton>
+                      ) : null}
                       <IconButton
                         className="icon-button"
                         aria-label={`${searchAction} for ${searched}`}
@@ -418,30 +472,39 @@ export function App() {
                     </div>
                   </div>
                   <p className="word-meta">
-                    <span>{sense.partOfSpeech}</span>
-                    {sense.phonetic ? (
+                    {preferences.details.partOfSpeech ? (
+                      <span>{sense.partOfSpeech}</span>
+                    ) : null}
+                    {preferences.details.phonetic && sense.phonetic ? (
                       <>
-                        <span className="meta-dot" aria-hidden="true">
-                          ·
-                        </span>
+                        {preferences.details.partOfSpeech ? (
+                          <span className="meta-dot" aria-hidden="true">
+                            ·
+                          </span>
+                        ) : null}
                         <span>{sense.phonetic}</span>
                       </>
                     ) : null}
                   </p>
                   <div className="sense-body" key={sense.id}>
-                    <p className="definition">{sense.definition}</p>
-                    {sense.example ? (
+                    {preferences.details.definition ? (
+                      <p className="definition">{sense.definition}</p>
+                    ) : null}
+                    {preferences.details.example && sense.example ? (
                       <blockquote>{sense.example}</blockquote>
                     ) : null}
-                    {sense.synonyms.length || sense.antonyms.length ? (
+                    {(preferences.details.synonyms && sense.synonyms.length) ||
+                    (preferences.details.antonyms && sense.antonyms.length) ? (
                       <dl className="relations">
-                        {sense.synonyms.length ? (
+                        {preferences.details.synonyms &&
+                        sense.synonyms.length ? (
                           <div>
                             <dt>Similar</dt>
                             <dd>{sense.synonyms.slice(0, 3).join(', ')}</dd>
                           </div>
                         ) : null}
-                        {sense.antonyms.length ? (
+                        {preferences.details.antonyms &&
+                        sense.antonyms.length ? (
                           <div>
                             <dt>Opposite</dt>
                             <dd>{sense.antonyms.slice(0, 3).join(', ')}</dd>
@@ -449,7 +512,42 @@ export function App() {
                         ) : null}
                       </dl>
                     ) : null}
+                    {(preferences.details.synonyms &&
+                      sense.synonyms.length &&
+                      sense.synonymsScope === 'partOfSpeech') ||
+                    (preferences.details.antonyms &&
+                      sense.antonyms.length &&
+                      sense.antonymsScope === 'partOfSpeech') ? (
+                      <p className="provider-note">
+                        Related words apply to {sense.partOfSpeech} usage, not
+                        just this meaning.
+                      </p>
+                    ) : null}
+                    {(() => {
+                      const missing = [
+                        preferences.details.example && !sense.example
+                          ? 'example'
+                          : '',
+                        preferences.details.synonyms && !sense.synonyms.length
+                          ? 'synonyms'
+                          : '',
+                        preferences.details.antonyms && !sense.antonyms.length
+                          ? 'antonyms'
+                          : '',
+                        preferences.details.phonetic && !sense.phonetic
+                          ? 'phonetic spelling'
+                          : '',
+                      ].filter(Boolean);
+                      return missing.length ? (
+                        <p className="provider-note">
+                          Not provided: {missing.join(', ')}.
+                        </p>
+                      ) : null;
+                    })()}
                   </div>
+                  <p className="audio-notice" role="status">
+                    {audioNotice}
+                  </p>
                 </>
               ) : (
                 <div className="empty-state">
@@ -505,6 +603,7 @@ export function App() {
                     title="Previous meaning (←)"
                     disabled={page === 0}
                     onClick={() => {
+                      setAudioNotice('');
                       setPage(page - 1);
                       setSourceOpen(false);
                     }}
@@ -521,6 +620,7 @@ export function App() {
                     title="Next meaning (→)"
                     disabled={page === senses.length - 1}
                     onClick={() => {
+                      setAudioNotice('');
                       setPage(page + 1);
                       setSourceOpen(false);
                     }}

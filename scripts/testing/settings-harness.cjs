@@ -14,4 +14,12 @@ Menu.buildFromTemplate = (template) => {
     globalThis.wordpeekTestMenu = menu;
   return menu;
 };
-void import('../../electron/main.mjs');
+void (async () => {
+  const { SelectionHost } = await import('../../electron/selection-host.mjs');
+  const configure = SelectionHost.prototype.configure;
+  SelectionHost.prototype.configure = function (automatic) {
+    globalThis.wordpeekTestSelectionHost = this;
+    return configure.call(this, automatic);
+  };
+  await import('../../electron/main.mjs');
+})();

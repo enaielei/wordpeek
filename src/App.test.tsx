@@ -7,6 +7,8 @@ const mock = vi.hoisted(() => ({
   lookup: vi.fn(),
   search: vi.fn(),
   hide: vi.fn(),
+  speak: vi.fn().mockResolvedValue({ ok: true }),
+  recordShortcut: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('./bridge', () => ({
   bridge: {
@@ -15,7 +17,17 @@ vi.mock('./bridge', () => ({
     settings: async () => ({
       appearance: 'system',
       shortcut: 'Control+Alt+W',
-      clipboardFallback: false,
+      shortcutEnabled: true,
+      autoPopupEnabled: false,
+      details: {
+        definition: true,
+        partOfSpeech: true,
+        phonetic: true,
+        pronunciation: true,
+        example: true,
+        synonyms: true,
+        antonyms: true,
+      },
       searchEngine: 'google',
       customSearchUrl: '',
     }),
@@ -50,6 +62,32 @@ async function lookup(word = 'bright') {
 }
 
 describe('compact vocabulary card', () => {
+  it('groups settings and hides only disabled details after saving', async () => {
+    const user = await lookup();
+    await screen.findByText('Giving off a lot of light.');
+    await user.click(screen.getByRole('button', { name: 'Open settings' }));
+    for (const name of ['Appearance', 'Triggers', 'Word details', 'Search'])
+      expect(screen.getByRole('group', { name })).toBeVisible();
+    await user.click(screen.getByRole('checkbox', { name: 'Synonyms' }));
+    await user.click(screen.getByRole('checkbox', { name: 'Usage example' }));
+    await user.click(
+      screen.getByRole('checkbox', { name: 'Pronunciation button' }),
+    );
+    await user.click(screen.getByRole('button', { name: 'Save Settings' }));
+    await screen.findByText('Settings saved.');
+    await user.click(
+      screen.getByRole('button', { name: 'Back to dictionary' }),
+    );
+    expect(screen.queryByText('luminous, shining')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('A bright lamp lit the room.'),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Play pronunciation of bright' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('dim')).toBeVisible();
+    expect(screen.getByText('Giving off a lot of light.')).toBeVisible();
+  });
   it('navigates definitions, examples, and relationships together without wrapping', async () => {
     const user = await lookup();
     expect(await screen.findByText('Giving off a lot of light.')).toBeVisible();
@@ -91,7 +129,7 @@ describe('compact vocabulary card', () => {
         },
       ],
     });
-    await lookup('test');
+    const user = await lookup('test');
     expect(await screen.findByText('A check.')).toBeVisible();
     expect(
       screen.queryByRole('navigation', { name: 'Meanings' }),
@@ -99,8 +137,13 @@ describe('compact vocabulary card', () => {
     expect(screen.queryByText('Similar')).not.toBeInTheDocument();
     expect(screen.queryByText('Opposite')).not.toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Pronunciation unavailable' }),
-    ).toBeDisabled();
+      screen.getByRole('button', { name: 'Play pronunciation of test' }),
+    ).toBeEnabled();
+    await user.click(
+      screen.getByRole('button', { name: 'Play pronunciation of test' }),
+    );
+    expect(mock.speak).toHaveBeenCalledWith('test');
+    expect(await screen.findByText(/Using the system voice/)).toBeVisible();
   });
   it('provides retry and Google after a provider failure', async () => {
     mock.lookup.mockResolvedValueOnce({

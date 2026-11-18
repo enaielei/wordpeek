@@ -3,7 +3,6 @@ import {
   BrowserWindow,
   Menu,
   Tray,
-  clipboard,
   globalShortcut,
   ipcMain,
   nativeImage,
@@ -14,11 +13,9 @@ import {
   protocol,
   net,
 } from 'electron';
-import { execFile } from 'node:child_process';
 import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { promisify } from 'node:util';
 import { fetchEntry, normalizeQuery, safeSource } from './provider.mjs';
 
 import { buildSearchUrl } from '../shared/search.mjs';
@@ -28,10 +25,10 @@ import {
   validateSettings,
 } from './settings.mjs';
 import { trayTemplate } from './tray.mjs';
+import { SelectionHost } from './selection-host.mjs';
 
 const directory = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(directory, '..');
-const run = promisify(execFile);
 const development =
   !app.isPackaged && process.env.WORDPEEK_DEV_URL === 'http://127.0.0.1:5173';
 let settings = { ...DEFAULT_SETTINGS };
@@ -42,6 +39,8 @@ let quitting = false;
 let capturing = false;
 let latest = { word: '', message: '', revision: 0 };
 let pendingLookup = null;
+let selectionHost;
+let shortcutRecording = false;
 
 protocol.registerSchemesAsPrivileged([
   {
@@ -50,17 +49,35 @@ protocol.registerSchemesAsPrivileged([
   },
 ]);
 
-function showWindow(context) {
+function showWindow(context, passive = false, selection = null) {
   if (context) latest = { ...context, revision: latest.revision + 1 };
-  const cursor = screen.getCursorScreenPoint();
+  const cursor = selection?.width
+    ? screen.screenToDipPoint({
+        x: Math.round(selection.x + selection.width),
+        y: Math.round(selection.y + selection.height),
+      })
+    : screen.getCursorScreenPoint();
   const area = screen.getDisplayNearestPoint(cursor).workArea;
   const [width, height] = window.getSize();
+  const below = cursor.y + 12;
+  const above = selection?.height
+    ? screen.screenToDipPoint({
+        x: Math.round(selection.x),
+        y: Math.round(selection.y),
+      }).y -
+      height -
+      12
+    : cursor.y - height - 12;
+  const desiredY = below + height <= area.y + area.height ? below : above;
   window.setPosition(
     Math.max(area.x, Math.min(cursor.x + 18, area.x + area.width - width)),
-    Math.max(area.y, Math.min(cursor.y + 18, area.y + area.height - height)),
+    Math.max(area.y, Math.min(desiredY, area.y + area.height - height)),
   );
-  window.show();
-  window.focus();
+  if (passive) window.showInactive();
+  else {
+    window.show();
+    window.focus();
+  }
   window.webContents.send('selection:changed', latest);
 }
 
@@ -68,51 +85,29 @@ async function captureSelection() {
   if (capturing) return;
   capturing = true;
   try {
-    let text = '';
-    if (process.platform === 'win32') {
-      const script = path.join(
-        directory.replace('app.asar', 'app.asar.unpacked'),
-        'selection.ps1',
-      );
+    const result = await selectionHost.capture();
+    const selection = result.selection;
+    if (selection?.text) {
       try {
-        const { stdout } = await run(
-          path.join(
-            process.env.SystemRoot || 'C:\\Windows',
-            'System32',
-            'WindowsPowerShell',
-            'v1.0',
-            'powershell.exe',
-          ),
-          ['-NoLogo', '-NoProfile', '-NonInteractive', '-STA', '-File', script],
-          {
-            windowsHide: true,
-            timeout: 5_000,
-            maxBuffer: 16_384,
-            encoding: 'utf8',
-          },
+        showWindow(
+          { word: normalizeQuery(selection.text), message: '', passive: false },
+          false,
+          selection,
         );
-        text = stdout.trim();
-      } catch {
-        /* Show manual entry when the app does not expose a selection. */
-      }
-    }
-    if (!text && settings.clipboardFallback) text = clipboard.readText().trim();
-    if (text) {
-      try {
-        showWindow({ word: normalizeQuery(text), message: '' });
       } catch {
         showWindow({
           word: '',
-          message: 'Select a word or short phrase, up to 80 characters.',
+          message: 'Select one word or a short phrase, up to 80 characters.',
+          passive: false,
         });
       }
-    } else {
+    } else
       showWindow({
         word: '',
         message:
-          'This app didn’t expose selected text. Type a word here, or copy it and choose “Look Up Clipboard” from the tray.',
+          'Couldn’t read the selection in that app. Select a word again, or enter it here. Some apps do not expose selected text to Windows accessibility.',
+        passive: false,
       });
-    }
   } finally {
     capturing = false;
   }
@@ -146,7 +141,10 @@ async function applySettings(input) {
     return { ok: false, message: error.message };
   }
   const previous = settings;
-  if (next.shortcut !== previous.shortcut) {
+  if (
+    next.shortcutEnabled &&
+    (!previous.shortcutEnabled || next.shortcut !== previous.shortcut)
+  ) {
     try {
       if (!registerShortcut(next.shortcut))
         return {
@@ -165,14 +163,21 @@ async function applySettings(input) {
     await writeFile(target + '.tmp', JSON.stringify(next, null, 2));
     await rename(target + '.tmp', target);
   } catch {
-    if (next.shortcut !== previous.shortcut)
+    if (
+      next.shortcutEnabled &&
+      (!previous.shortcutEnabled || next.shortcut !== previous.shortcut)
+    )
       globalShortcut.unregister(next.shortcut);
     return { ok: false, message: 'Couldn’t save your settings. Try again.' };
   }
   settings = next;
   applyAppearance();
-  if (next.shortcut !== previous.shortcut)
+  if (
+    previous.shortcutEnabled &&
+    (!next.shortcutEnabled || next.shortcut !== previous.shortcut)
+  )
     globalShortcut.unregister(previous.shortcut);
+  selectionHost?.configure(next.autoPopupEnabled);
   refreshTray();
   window.webContents.send('settings:changed', settings);
   return { ok: true, settings };
@@ -193,19 +198,6 @@ function refreshTray() {
       trayTemplate(settings, {
         open: () => showWindow(),
         settings: () => showSettings(),
-        clipboard: () => {
-          try {
-            showWindow({
-              word: normalizeQuery(clipboard.readText()),
-              message: '',
-            });
-          } catch {
-            showWindow({
-              word: '',
-              message: 'Copy an English word or short phrase first.',
-            });
-          }
-        },
         update: async (patch) => {
           const result = await commitSettings((current) => ({
             ...current,
@@ -247,19 +239,16 @@ function setupIpc() {
   handle('dictionary:lookup', async (word) => {
     try {
       normalizeQuery(word);
-      if (pendingLookup)
-        return {
-          ok: false,
-          error: {
-            code: 'busy',
-            message: 'A lookup is already running. Try again in a moment.',
-          },
-        };
-      pendingLookup = fetchEntry(word);
+      pendingLookup?.abort();
+      const controller = new AbortController();
+      pendingLookup = controller;
       try {
-        return { ok: true, entries: await pendingLookup };
+        return {
+          ok: true,
+          entries: await fetchEntry(word, fetch, controller.signal),
+        };
       } finally {
-        pendingLookup = null;
+        if (pendingLookup === controller) pendingLookup = null;
       }
     } catch (error) {
       return {
@@ -268,6 +257,19 @@ function setupIpc() {
       };
     }
   });
+  handle('shortcut:record', (active) => {
+    if (typeof active !== 'boolean') throw new Error('Invalid recording state');
+    shortcutRecording = active;
+    if (active) globalShortcut.unregister(settings.shortcut);
+    else if (
+      settings.shortcutEnabled &&
+      !globalShortcut.isRegistered(settings.shortcut)
+    )
+      registerShortcut(settings.shortcut);
+  });
+  handle('pronunciation:speak', (word) =>
+    selectionHost.speak(normalizeQuery(word)),
+  );
   handle('browser:search', (word) =>
     shell.openExternal(buildSearchUrl(word, settings)),
   );
@@ -371,13 +373,50 @@ else {
       });
       window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
       window.webContents.on('will-navigate', (event) => event.preventDefault());
-      window.on('blur', () => window.hide());
+      window.on('blur', () => {
+        if (shortcutRecording) {
+          shortcutRecording = false;
+          if (
+            settings.shortcutEnabled &&
+            !globalShortcut.isRegistered(settings.shortcut)
+          )
+            registerShortcut(settings.shortcut);
+        }
+        window.hide();
+      });
+      window.on('hide', () => selectionHost?.stopSpeech());
       window.on('close', (event) => {
         if (!quitting) {
           event.preventDefault();
           window.hide();
         }
       });
+      selectionHost = new SelectionHost(
+        app.isPackaged
+          ? path.join(process.resourcesPath, 'native/WordPeek.Native.exe')
+          : path.join(root, 'native/bin/WordPeek.Native.exe'),
+        process.pid,
+        (selection) => {
+          if (!settings.autoPopupEnabled || window.isFocused()) return;
+          try {
+            showWindow(
+              {
+                word: normalizeQuery(selection.text),
+                message: '',
+                passive: true,
+              },
+              true,
+              selection,
+            );
+          } catch {
+            /* Ignore non-word selections. */
+          }
+        },
+        () => {
+          if (latest.passive && !window.isFocused()) window.hide();
+        },
+      );
+      selectionHost.configure(settings.autoPopupEnabled);
       setupIpc();
       const icon = nativeImage.createFromPath(
         path.join(root, 'assets/brand/icon.png'),
@@ -388,7 +427,8 @@ else {
       tray.on('double-click', () => showWindow());
       let registered = false;
       try {
-        registered = registerShortcut(settings.shortcut);
+        registered =
+          !settings.shortcutEnabled || registerShortcut(settings.shortcut);
       } catch {
         /* Open settings to choose another. */
       }
@@ -407,7 +447,10 @@ else {
   app.on('before-quit', () => {
     quitting = true;
   });
-  app.on('will-quit', () => globalShortcut.unregisterAll());
+  app.on('will-quit', () => {
+    globalShortcut.unregisterAll();
+    selectionHost?.stop();
+  });
   app.on('window-all-closed', () => {
     /* The tray owns the app lifecycle. */
   });

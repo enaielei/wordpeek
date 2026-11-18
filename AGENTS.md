@@ -7,12 +7,15 @@ skills are supporting references, not permission to override the product scope.
 
 ## Product invariants
 
-- Installed desktop app, Windows first. Online dictionary sources only for v0.1.
+- Installed desktop app, Windows first. Online dictionary sources; system speech may supplement unavailable recordings.
 - HTML/CSS popover: one sense, one example, pronunciation, up to three synonyms
-  and antonyms, previous/next meanings, configured web search. Hide absent information.
-- Preserve source/license metadata and sense relationships. Never invent dictionary content.
+  and antonyms, previous/next meanings, configured web search. Detail visibility is configurable.
+  Hide empty field headings; briefly identify missing enabled content.
+- Preserve source/license metadata and sense relationships. Label part-of-speech relationships as broader than the current sense. Never invent dictionary content.
 - No browser extension, offline data packs, AI provider, telemetry, paid backend,
   history, auto-start, or persistent clipboard monitoring without a scoped issue.
+- Automatic selection cards must use showInactive and never focus renderer inputs.
+- Keep keyboard and automatic triggers independent; at least one must remain enabled.
 - Selection means the user's explicit selection, never full page or document text.
 - External search uses validated saved presets or a user-configured HTTPS `{query}`
   template. Never accept a raw destination URL from the renderer search request.

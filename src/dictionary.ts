@@ -92,21 +92,28 @@ export function toSenses(entries: DictionaryEntry[]): Sense[] {
           audioLicense: recording?.license,
           definition: definition.definition,
           example: text(definition.example),
-          // Part-of-speech-wide relations may describe a different sense.
+          // Keep broad relations visible, labeled as part-of-speech-wide in the UI.
           synonyms: words(
             definition.synonyms?.length
               ? definition.synonyms
-              : definitions.length === 1
-                ? meaning.synonyms
-                : [],
+              : meaning.synonyms,
           ),
           antonyms: words(
             definition.antonyms?.length
               ? definition.antonyms
-              : definitions.length === 1
-                ? meaning.antonyms
-                : [],
+              : meaning.antonyms,
           ),
+          recordings: phonetics
+            .map((item) =>
+              allowedUrl(item.audio, [
+                'upload.wikimedia.org',
+                'api.dictionaryapi.dev',
+                'ssl.gstatic.com',
+              ]),
+            )
+            .filter((url): url is string => !!url),
+          synonymsScope: definition.synonyms?.length ? 'sense' : 'partOfSpeech',
+          antonymsScope: definition.antonyms?.length ? 'sense' : 'partOfSpeech',
           source,
           license: entry.license,
         });

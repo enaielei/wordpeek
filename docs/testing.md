@@ -42,15 +42,17 @@ mark unperformed checks as passed.
 - Select a word in Edge/Chrome, Notepad, Word, and a PDF reader; invoke the hotkey.
   Record support per application. Unsupported selection must open a useful fallback.
 - No selected text: manual entry works. Clipboard remains untouched.
-- Clipboard fallback is off by default. Explicit tray lookup and opt-in fallback
-  send only short validated text, never a copied document.
+- Neither trigger reads or changes the clipboard. Automatic lookup defaults off.
+- Automatic cards preserve foreground keyboard focus; dismissing/changing a selection
+  removes the passive card. Click it to interact; drag its header to reposition.
 - Shortcut can be changed and persists after restart. A conflict produces an error.
 - Popup is on-screen near the cursor on primary/secondary displays at different DPI.
 - Escape and clicking another app hide the popover; pagination remains usable.
 - Selected search presets and custom URLs open with the correct encoded query; source links work.
-- Tray opens Settings and updates engine/clipboard preferences. Panel, tray, and
+- Tray opens Settings and updates engine/trigger preferences. Panel, tray, and
   saved configuration agree after changes and restart. Invalid templates do not save.
-- Audio only loads after playback; recording failure has a useful message.
+- Audio only loads after playback; failed recordings try alternatives and labeled system speech.
+- Each Word details switch hides/shows its field after saving. Broader relations are labeled.
 - Unavailable internet, a missing word, and a provider failure show retry/search.
 - Keyboard-only use, light/dark, 100%/200% zoom, long words/content, missing fields,
   and reduced motion remain readable and navigable.
@@ -78,3 +80,31 @@ pairs; visual screenshots alone do not establish accessibility compliance.
 `npm run test:zoom` uses authored fixture content to check the full card at 100%
 and 200% zoom in an isolated native window. Footer controls wrap when the
 effective width is narrow; normal-density layout keeps one compact row.
+
+## 0.3.0 verification (2026-11-18)
+
+- 54 unit/component tests, format, lint, strict TypeScript and frontend build passed.
+- Isolated native settings checks passed: shortcut capture, chips inside input,
+  categorized sections, detail preferences, tray synchronization, restart persistence.
+- Live dictionary lookup/meaning navigation/attribution and 100%/200% zoom passed.
+- Windows System.Speech helper accepted the test utterance. This confirms the
+  speech request, not an auditory check by a listener.
+- Simulated selection callback verification passed: showInactive, no explicit
+  focus call, passive renderer context, cleared-selection dismissal, draggable header.
+- Actual UIA fixture capture did not pass: the external test window did not become
+  the OS foreground window in this session. Codex selection capture, real shortcut
+  invocation, passive OS focus preservation, mouse dragging, and host-app
+  compatibility still require interactive acceptance; see issue #3.
+
+Run npm run test:selection in an interactive Windows session with the selection
+fixture in the foreground. This check intentionally remains outside CI.
+The simulated callback check is node scripts/verify-passive.mjs.
+
+The packaged 0.3.0 executable also passed the live dictionary smoke test with no
+renderer errors; its bundled speech helper accepted a test request. NSIS packaging
+completed unsigned.
+
+Settings screenshots use an isolated test profile and a demonstration custom URL:
+
+![Light settings](screenshots/0.3.0/settings-light.png)
+![Dark settings](screenshots/0.3.0/settings-dark.png)

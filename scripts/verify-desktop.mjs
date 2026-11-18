@@ -74,7 +74,9 @@ try {
   await expect(
     page.getByRole('textbox', { name: 'Lookup shortcut' }),
   ).toHaveValue('Control+Alt+Shift+Y');
-  await expect(page.getByRole('checkbox')).not.toBeChecked();
+  await expect(
+    page.getByRole('checkbox', { name: 'Auto popup on text selection' }),
+  ).not.toBeChecked();
   await page.getByRole('button', { name: 'Back to dictionary' }).click();
   // Dismissal is tested against the real BrowserWindow, not a renderer mock.
   await page.keyboard.press('Escape');
