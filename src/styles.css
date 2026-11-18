@@ -592,3 +592,7 @@ blockquote::after {
 .source-button:hover {
   color: var(--wp-ink);
 }
+
+.card-footer {
+  flex-wrap: wrap;
+}
